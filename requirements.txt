@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+python-dotenv
+langchain
+pinecone-client
+asyncio
+# add any other packages you know your project uses
