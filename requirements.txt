@@ -4,4 +4,13 @@ python-dotenv
 langchain
 pinecone-client
 asyncio
+openai
+chromadb
+PyPDF2
+tiktoken
+langchain-community
+langchain-groq
+langchainhub
+
+
 # add any other packages you know your project uses
