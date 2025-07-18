@@ -11,6 +11,8 @@ tiktoken
 langchain-community
 langchain-groq
 langchainhub
+langchain-chroma
+
 
 
 # add any other packages you know your project uses
