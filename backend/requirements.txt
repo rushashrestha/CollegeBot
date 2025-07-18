@@ -11,6 +11,9 @@ tiktoken
 langchain-community
 langchain-groq
 langchainhub
+flask 
+flask-cors 
+
 
 
 # add any other packages you know your project uses

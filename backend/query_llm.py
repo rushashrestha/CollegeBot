@@ -1,12 +1,28 @@
 import os
 from dotenv import load_dotenv
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from flask import Flask,request,jsonify
+from cors_setup import setup_cors
+from flask_cors import CORS
 
 load_dotenv()
+
+app=Flask(__name__)
+CORS(app)
+
+@app.route('/api/query',methods=['POST','OPTIONS'])
+def handle_query():
+    if request.method=='OPTIONS':
+        return jsonify({'status':'ok'}),200
+    data=request.get_json()
+    prompt=data['query']
+    system=CSITQuerySystem()
+    response=system.get_response(prompt)
+    return jsonify({'response':response})
 
 class CSITQuerySystem:
     def __init__(self):
@@ -161,4 +177,4 @@ if __name__ == "__main__":
     # First-time setup (uncomment when PDF changes)
     # CSITQuerySystem().create_vector_db()
     
-    interactive_chat()
+    app.run(host='0.0.0.0',port=5000,debug=True)
