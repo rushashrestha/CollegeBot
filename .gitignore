@@ -16,3 +16,6 @@ __pycache__/
 Thumbs.db
 
 /db/
+
+# ignore the node modules of the frontend folder 
+frontend/node_modules
