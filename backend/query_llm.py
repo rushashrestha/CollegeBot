@@ -1,31 +1,26 @@
 import os
 from dotenv import load_dotenv
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
-from langchain_community.document_loaders import UnstructuredMarkdownLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+ # Updated import
 
 load_dotenv()
 
 class MarkdownQuerySystem:
     def __init__(self):
-        # MODIFY HERE: Update these paths to your Markdown files
-        
-        self.vectordb_path = "data/markdown/vector_db"  # Where to store ChromaDB
-        self.md_paths = [
-            "data/csit.md",  # Replace with your MD files
-            "data/bca.md"
-        ]
-        
-        # Initialize embedding model (no changes needed)
+        """Initialize the query system with embeddings and paths"""
         self.embedding = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
             model_kwargs={'device': 'cpu'},
             encode_kwargs={'normalize_embeddings': True}
         )
+        self.vectordb_path = "db"  # Directory for vector database
+        self.md_path = "data/BSW.md"  # Path to markdown file
         
-        # MODIFY HERE: Add/update your institutional knowledge
+        # Verified institutional knowledge about programs
         self.college_programs = {
             "csit": {
                 "offered": True,
@@ -44,22 +39,17 @@ class MarkdownQuerySystem:
                 "intake": 60,
                 "website": "https://samriddhicollege.edu.np/bca",
                 "keywords": ["bca", "computer applications"]
-
-
-            },
-            # Add other programs as needed
+            }
         }
 
     def create_vector_db(self):
-        """Create/update vector database from Markdown files"""
+        """Create/update vector database from Markdown file"""
         try:
-            # Load all Markdown files
-            documents = []
-            for path in self.md_paths:
-                loader = UnstructuredMarkdownLoader(path)
-                documents.extend(loader.load())
+            print("Loading markdown documents...")
+            loader = TextLoader(self.md_path)
+            pages = loader.load_and_split()
             
-            # MODIFY HERE: Adjust chunking parameters if needed
+            # Configure text splitting for markdown content
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1000,      # Optimal for most Markdown
                 chunk_overlap=200,    # Helps maintain context
@@ -67,21 +57,24 @@ class MarkdownQuerySystem:
             )
             splits = text_splitter.split_documents(documents)
             
+            print("Creating vector database...")
             vectordb = Chroma.from_documents(
                 documents=splits,
                 embedding=self.embedding,
                 persist_directory=self.vectordb_path
             )
             vectordb.persist()
+            print("Vector database created successfully!")
             return vectordb
         except Exception as e:
             print(f"Error creating vector DB: {str(e)}")
             return None
 
     def get_vectordb(self):
-        """Load existing vector database"""
+        """Load existing vector database or create new if doesn't exist"""
         try:
             if not os.path.exists(self.vectordb_path):
+                print("No existing vector DB found, creating new...")
                 return self.create_vector_db()
             return Chroma(
                 persist_directory=self.vectordb_path,
@@ -92,44 +85,47 @@ class MarkdownQuerySystem:
             return None
 
     def _answer_college_query(self, prompt):
-        """Handle institutional questions"""
+        """Handle specific questions about college programs"""
         prompt_lower = prompt.lower()
         
-        # MODIFY HERE: Update your institutional logic if needed
-        if any(q in prompt_lower for q in ["does samriddhi", "offer", "have"]):
+        # Program availability questions
+        if any(q in prompt_lower for q in ["does samriddhi", "offer", "have", "provide"]):
             for program, details in self.college_programs.items():
                 if any(kw in prompt_lower for kw in details["keywords"]):
                     if details["offered"]:
-                        return (f"Yes, we offer {details['title']} ({details['duration']}). "
-                               f"More info: {details['website']}")
-                    return f"No, we don't currently offer {program.upper()}."
+                        return (f"Yes, Samriddhi College offers {details['title']} ({details['duration']}) "
+                                f"affiliated with {details['affiliation']}. Intake: {details['intake']} students. "
+                                f"More info: {details['website']}")
+                    return f"No, Samriddhi College does not currently offer {program.upper()}."
         
-        if "what programs" in prompt_lower:
-            offered = [details['title'] for details in self.college_programs.values()]
-            return "We offer:\n- " + "\n- ".join(offered)
+        # Program listing
+        if "what programs" in prompt_lower or "which courses" in prompt_lower:
+            offered = [details['title'] for details in self.college_programs.values() 
+                      if details['offered']]
+            return "Samriddhi College offers:\n- " + "\n- ".join(offered)
         
         return None
 
-    def _query_markdown_content(self, prompt):
-        """Query the Markdown content"""
+    def _query_md_content(self, prompt):
+        """Query the markdown content using similarity search"""
         try:
             vectordb = self.get_vectordb()
             if not vectordb:
-                return "Database not available. Please try again later."
+                return "Error: Could not access course documents."
                 
-            # MODIFY HERE: Adjust retrieval parameters
-            docs = vectordb.similarity_search(prompt, k=5)  # Top 5 most relevant chunks
+            # Perform similarity search
+            docs = vectordb.similarity_search(prompt, k=5)
             context = "\n".join([doc.page_content for doc in docs])
             
-            # Initialize LLM (no changes needed)
+            # Initialize LLM
             llm = ChatGroq(
                 temperature=0.2,  # Lower = more factual
                 groq_api_key=os.getenv("GROQ_API_KEY"),
                 model_name="llama3-70b-8192"  # MODIFY HERE: Change model if needed
             )
             
-            # MODIFY HERE: Customize the prompt template
-            response = llm.invoke(f"""Answer the question based ONLY on this context:
+            # Generate response with strict context adherence
+            response = llm.invoke(f"""Answer using ONLY this context:
                                 {context}
                                 
                                 Question: {prompt}
@@ -140,18 +136,18 @@ class MarkdownQuerySystem:
             return f"Error: {str(e)}"
 
     def get_response(self, prompt):
-        """Main query handler"""
-        # First check institutional knowledge
+        """Main query interface"""
+        # First handle institutional questions
         college_response = self._answer_college_query(prompt)
         if college_response:
             return college_response
             
-        # Fall back to document content
-        return self._query_markdown_content(prompt)
+        # Then query markdown content
+        return self._query_md_content(prompt)
 
 def interactive_chat():
-    """Run the chat interface"""
-    print("\nAcademic Query System (Markdown)")
+    """Run interactive chat interface"""
+    print("\nSamriddhi College Academic Query System")
     print("Type 'exit' to quit\n")
     
     system = MarkdownQuerySystem()
@@ -169,7 +165,7 @@ def interactive_chat():
             break
 
 if __name__ == "__main__":
-    # First-time setup (uncomment to recreate vector DB when files change)
-    # MarkdownQuerySystem().create_vector_db()
+    # Uncomment to rebuild vector database when markdown changes:
+    # CSITQuerySystem().create_vector_db()
     
     interactive_chat()
