@@ -101,6 +101,19 @@ Fieldwork is an important part of the social work program. The students are expe
 | PSY 426     | Industrial and Organizational Psychology | 70     | 30                  | –         | 100   |
 | PSY 427     | Research Methods and Academic Writing    | 70     | 30                  | –         | 100   |
 
+## Non-Credit Course (NCC) for BSW provided by SAmriddhi college
+- Microsoft Office Course
+- Proposal and Research Writing Training
+- Statistics Training
+- Psychosocial Counseling Training
+- SPSS Training
+- Soft Skills Development Training
+- Psychological First Aid Training
+- Psychotherapy Training
+- Project Management Training
+- Human Resource Management Training
+- Academic Edge with AI
+
 ## Career after BSW
 
 # Social and Community Development Sector
