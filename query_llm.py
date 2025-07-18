@@ -1,103 +1,164 @@
 import os
 from dotenv import load_dotenv
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
-# Answer templates for common CSIT questions
-ANSWER_TEMPLATES = {
-    "semester": "The BSc CSIT program at Tribhuvan University consists of 8 semesters over 4 years.",
-    "colleges": lambda x: f"{x} is mentioned in the CSIT program materials as an affiliated college.",
-    "courses": "In semester {num}, the courses include: {list}",
-    "default": "Based on the CSIT program document: {answer}"
-}
-
-def enhance_query(prompt):
-    """Expand queries with synonyms"""
-    synonyms = {
-        "semester": ["term", "academic period"],
-        "college": ["institution", "campus"],
-        "course": ["subject", "class"]
-    }
-    
-    enhanced = prompt.lower()
-    for term, variants in synonyms.items():
-        if term in enhanced:
-            enhanced += " " + " ".join(variants)
-    return enhanced
-
-def get_csit_response(prompt):
-    try:
-        embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        vectordb = Chroma(persist_directory="db", embedding_function=embedding)
-        
-        # Enhanced retrieval with synonym expansion
-        expanded_query = enhance_query(prompt)
-        docs = vectordb.similarity_search(expanded_query, k=5)
-        
-        # Page-aware context building
-        context_by_page = {}
-        for doc in docs:
-            page = doc.metadata.get('page', 0)
-            context_by_page.setdefault(page, []).append(doc.page_content)
-        
-        # Prioritize most relevant pages
-        sorted_pages = sorted(context_by_page.items(), 
-                            key=lambda x: len(x[1]), 
-                            reverse=True)
-        context = "\n\n".join([f"=== Page {page} ===\n" + "\n".join(content) 
-                             for page, content in sorted_pages[:3]])
-        
-        # Special cases handling
-        if "how many semester" in prompt.lower():
-            return ANSWER_TEMPLATES["semester"]
-            
-        if "college" in prompt.lower():
-            college_names = ["St. Xavier's", "Patan Multiple Campus", "Amrit Science Campus"]
-            found = [c for c in college_names if c.lower() in context.lower()]
-            if found:
-                return "\n".join([ANSWER_TEMPLATES["colleges"](c) for c in found])
-        
-        # General answer generation
-        llm = ChatGroq(
-            temperature=0.2,
-            groq_api_key=os.getenv("GROQ_API_KEY"),
-            model_name="llama3-70b-8192"
+class CSITQuerySystem:
+    def __init__(self):
+        # Initialize with updated Chroma
+        self.embedding = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': True}
         )
+        self.vectordb_path = "data/scraped_pdfs/vector_db"
+        self.pdf_path = "data/scraped_pdfs/full_csit_program.pdf"
         
-        response = llm.invoke(f"""Answer this CSIT question using ONLY below context.
-                            If unsure, say "I couldn't find specific information".
-                            
-                            Context:
-                            {context}
-                            
-                            Question: {prompt}""")
-        
-        # Verify answer quality
-        if verify_answer(response.content, context):
-            return ANSWER_TEMPLATES["default"].format(answer=response.content)
-        return response.content
-        
-    except Exception as e:
-        print(f"Error: {e}")
-        return "Sorry, I couldn't process that request."
+        # Verified institutional knowledge
+        self.college_programs = {
+            "csit": {
+                "offered": True,
+                "title": "Bachelor of Science in Computer Science and IT",
+                "duration": "4 years (8 semesters)",
+                "affiliation": "Tribhuvan University",
+                "intake": 48,
+                "website": "https://samriddhicollege.edu.np/bsc-csit",
+                "keywords": ["csit", "computer science", "bsc csit"]
+            },
+            "bca": {
+                "offered": True,
+                "title": "Bachelor of Computer Applications",
+                "duration": "4 years",
+                "affiliation": "Tribhuvan University",
+                "intake": 60,
+                "website": "https://samriddhicollege.edu.np/bca",
+                "keywords": ["bca", "computer applications"]
 
-def verify_answer(answer, context):
-    """Ensure answer is context-grounded"""
-    required_terms = ["CSIT", "TU", "semester", "credit", "course"]
-    return sum(term in answer for term in required_terms) >= 2
+
+            }
+        }
+
+    def create_vector_db(self):
+        """Create/update vector database from PDF"""
+        try:
+            loader = PyPDFLoader(self.pdf_path)
+            pages = loader.load_and_split()
+            
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+                separators=["\n\n", "\n", " ", ""]
+            )
+            splits = text_splitter.split_documents(pages)
+            
+            vectordb = Chroma.from_documents(
+                documents=splits,
+                embedding=self.embedding,
+                persist_directory=self.vectordb_path
+            )
+            vectordb.persist()
+            return vectordb
+        except Exception as e:
+            print(f"Error creating vector DB: {str(e)}")
+            return None
+
+    def get_vectordb(self):
+        """Load existing vector database"""
+        try:
+            if not os.path.exists(self.vectordb_path):
+                return self.create_vector_db()
+            return Chroma(
+                persist_directory=self.vectordb_path,
+                embedding_function=self.embedding
+            )
+        except Exception as e:
+            print(f"Error loading vector DB: {str(e)}")
+            return None
+
+    def _answer_college_query(self, prompt):
+        """Handle questions about Samriddhi College programs"""
+        prompt_lower = prompt.lower()
+        
+        # Check for program existence questions
+        if any(q in prompt_lower for q in ["does samriddhi", "offer", "have", "provide"]):
+            for program, details in self.college_programs.items():
+                if any(kw in prompt_lower for kw in details["keywords"]):
+                    if details["offered"]:
+                        return (f"Yes, Samriddhi College offers {details['title']} ({details['duration']}) "
+                            f"affiliated with {details['affiliation']}. Intake: {details['intake']} students. "
+                            f"More info: {details['website']}")
+                    return f"No, Samriddhi College does not currently offer {program.upper()}."
+        
+        # List available programs
+        if "what programs" in prompt_lower or "which courses" in prompt_lower:
+            offered = [details['title'] for details in self.college_programs.values() 
+                      if details['offered']]
+            return "Samriddhi College offers:\n- " + "\n- ".join(offered)
+        
+        return None
+
+    def _query_pdf_content(self, prompt):
+        """Query the PDF content for academic information"""
+        try:
+            vectordb = self.get_vectordb()
+            if not vectordb:
+                return "Unable to access course documents."
+                
+            docs = vectordb.similarity_search(prompt, k=5)
+            context = "\n".join([doc.page_content for doc in docs])
+            
+            llm = ChatGroq(
+                temperature=0.2,
+                groq_api_key=os.getenv("GROQ_API_KEY"),
+                model_name="llama3-70b-8192"
+            )
+            
+            response = llm.invoke(f"""Answer using ONLY this context:
+                                {context}
+                                Question: {prompt}
+                                If the answer isn't here, respond: "This information is not in the program document".""")
+            
+            return response.content
+        except Exception as e:
+            return f"Error querying documents: {str(e)}"
+
+    def get_response(self, prompt):
+        """Main method to get responses"""
+        # First try institutional questions
+        college_response = self._answer_college_query(prompt)
+        if college_response:
+            return college_response
+            
+        # Fall back to PDF content
+        return self._query_pdf_content(prompt)
 
 def interactive_chat():
-    print("\nCSIT Query System (Type 'exit' to quit)")
+    print("\nSamriddhi College Academic Query System")
+    print("Type 'exit' to quit\n")
+    
+    system = CSITQuerySystem()
+    
     while True:
-        prompt = input("\nYour question: ").strip()
-        if prompt.lower() in ['exit', 'quit']:
+        try:
+            prompt = input("Your question: ").strip()
+            if prompt.lower() in ['exit', 'quit']:
+                break
+                
+            response = system.get_response(prompt)
+            print(f"\n{response}\n")
+        except KeyboardInterrupt:
+            print("\nExiting...")
             break
-            
-        response = get_csit_response(prompt)
-        print(f"\nAnswer: {response}\n")
+        except Exception as e:
+            print(f"\nError: {str(e)}\n")
 
 if __name__ == "__main__":
+    # First-time setup (uncomment when PDF changes)
+    # CSITQuerySystem().create_vector_db()
+    
     interactive_chat()
