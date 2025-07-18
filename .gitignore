@@ -16,3 +16,13 @@ __pycache__/
 Thumbs.db
 
 /db/
+
+# ChromaDB files
+db/
+data/scraped_pdfs/vector_db/
+*.bin
+*.sqlite3
+*.parquet
+
+# ignore the node modules of the frontend folder 
+frontend/node_modules
