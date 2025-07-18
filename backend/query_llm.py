@@ -6,7 +6,7 @@ from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from flask import Flask,request,jsonify
-from cors_setup import setup_cors
+
 from flask_cors import CORS
 
 load_dotenv()
