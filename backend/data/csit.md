@@ -3,8 +3,8 @@ BSc Computer Science and Information Technology BSc CSIT
 Tribhuvan University Bachelors
 Field of Study: Science
 Alumni: 7 Graduated batch
-Duration: 4
-year program divided into 8 semesters, 126 hours of instruction
+
+## Duration - 4 years, 8 semesters, 126 Credit hours
 
 ---
 # Institutions offering BSc CSIT
@@ -86,8 +86,8 @@ course)
 A student eligible to study the B.Sc. CSIT course should collect and submit the admission form
 from any of the B.Sc. CSIT colleges. The admission form generally opens during Shrawan /
 Bhadra every year.
-Entrance Examination:
 
+## Entrance Examination:
 1. Tribhuvan University, Institute of Science and Technology, Dean office conducts the
     entrance examination.
 2. The Entrance Examination will be of 100 Full Marks including the subjects of
@@ -108,7 +108,7 @@ such students will not be published.
 
 # Year-wise Course Outline
 
-## Semester 1
+## Semester 1 Course Outline
 
 | Course Code | Course Title                            | Credit Hours | Full Marks |
 |-------------|-----------------------------------------|--------------|------------|
@@ -119,7 +119,7 @@ such students will not be published.
 | PHY113      | Physics                                 | 3            | 100        |
 |             | **Total**                               | **15**       | **500**    |
 
-## Semester 2
+## Semester 2 Course Outline
 
 | Course Code | Course Title                  | Credit Hours | Full Marks |
 |-------------|-------------------------------|--------------|------------|
@@ -130,7 +130,7 @@ such students will not be published.
 | STA164      | Statistics I                  | 3            | 100        |
 |             | **Total**                    | **15**       | **500**    |
 
-## Semester 3
+## Semester 3 Course Outline
 
 | Course Code | Course Title                  | Credit Hours | Full Marks |
 |-------------|-------------------------------|--------------|------------|
@@ -141,7 +141,7 @@ such students will not be published.
 | STA210      | Statistics II                 | 3            | 100        |
 |             | **Total**                    | **15**       | **500**    |
 
-## Semester 4
+## Semester 4 Course Outline
 
 | Course Code | Course Title                    | Credit Hours | Full Marks |
 |-------------|----------------------------------|--------------|------------|
@@ -152,7 +152,7 @@ such students will not be published.
 | CSC261      | Artificial Intelligence         | 3            | 100        |
 |             | **Total**                      | **15**       | **500**    |
 
-## Semester 5
+## Semester 5 Course Outline
 
 | Course Code | Course Title                   | Credit Hours | Full Marks |
 |-------------|--------------------------------|--------------|------------|
@@ -163,8 +163,15 @@ such students will not be published.
 | CSC318      | Web Technology                 | 3            | 100        |
 | Elective I  | Elective I                    | 3            | 100        |
 |             | **Total**                      | **18**       | **600**    |
+# List of electives for semester 5
+1. Multimedia Computing (CSC319) 
+2. Wireless Networking (CSC320) 
+3. Image Processing (CSC321) 
+4. Knowledge Management (CSC322) 
+5. Society and Ethics in Information Technology (CSC323) 
+6. Microprocessor Based Design (CSC324) 
 
-## Semester 6
+## Semester 6 Course Outline
 
 | Course Code | Course Title                   | Credit Hours | Full Marks |
 |-------------|--------------------------------|--------------|------------|
@@ -175,8 +182,16 @@ such students will not be published.
 | CSC368      | Technical Writing              | 3            | 100        |
 | Elective II | Elective II                   | 3            | 100        |
 |             | **Total**                      | **18**       | **600**    |
+# List of electives for semester 6
+| Electives | Course Code |
+| Applied Logic | CSC369 |
+| E-commerce | CSC370 |
+| Automation and Robotics | CSC371 |
+| Neural Networks | CSC372 |
+| Computer Hardware Design | CSC373 |
+| Cognitive Science | CSC374 |
 
-## Semester 7
+## Semester 7 Course Outline
 
 | Course Code | Course Title                     | Credit Hours | Full Marks |
 |-------------|----------------------------------|--------------|------------|
@@ -186,8 +201,16 @@ such students will not be published.
 | CSC412      | Project Work                    | 3            | 100        |
 | Elective III| Elective III                   | 3            | 100        |
 |             | **Total**                      | **15**       | **500**    |
+# List of electives for semester 7
+| Elective Code | Elective Title |
+| CSC369 | Applied Logic |
+| CSC370 | E-commerce |
+| CSC371 | Automation and Robotics |
+| CSC372 | Neural Networks |
+| CSC373 | Computer Hardware Design |
+| CSC374 | Cognitive Science |
 
-## Semester 8
+## Semester 8 Course Outline
 
 | Course Code | Course Title             | Credit Hours | Full Marks |
 |-------------|--------------------------|--------------|------------|
@@ -196,22 +219,35 @@ such students will not be published.
 | Elective IV | Elective IV              | 3            | 100        |
 | Elective V  | Elective V               | 3            | 100        |
 |             | **Total**                | **15**       | **500**    |
+# List of electives for semester 8
+| Elective Code | Elective Title |
+| CSC463 | Advanced Networking with IPV6 | 
+| CSC464 | Distributed Networking |  
+| CSC465 | Game Technology | 
+| CSC466 | Distributed and Object Oriented Database | 
+| CSC467 | Introduction to Cloud Computing | 
+| CSC468 | Geographical Information System |  
+| CSC469 | Decision Support System and Expert System | 
+| CSC470 | Mobile Application Development |  
+| CSC471 | Real Time Systems | 
+| CSC472 | Network and System Administration | 
+| CSC473 | Embedded Systems Programming |  
+| MGT474 | International Business Management |  
 
 ---
 
-# Non-Credit Courses (NCC):
-
-Mobile Application Development  
-UI/UX Design  
-Web Development  
-AWS  
-CCNA  
-Flutter  
-Golang  
-IT Essentials  
-Linux  
-Python  
-React  
+# Non-Credit Courses (NCC) for csit provided by samriddhi college:
+- Mobile Application Development  
+- UI/UX Design  
+- Web Development  
+- AWS  
+- CCNA  
+- Flutter  
+- Golang  
+- IT Essentials  
+- Linux  
+- Python  
+- React  
 
 ---
 
