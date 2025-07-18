@@ -1,21 +1,110 @@
 # Program Highlights
-
+BSc Computer Science and Information Technology BSc CSIT
+Tribhuvan University Bachelors
 Field of Study: Science
-
 Alumni: 7 Graduated batch
-
-Duration: 126 hours of instruction
+Duration: 4
+year program divided into 8 semesters, 126 hours of instruction
 
 ---
+# Institutions offering BSc CSIT
+
+Currently, 60 institutions offer BSc Computer Science and Information Technology (BSc CSIT)
+under Tribhuvan University in Nepal with 18 of them offering in Kathmandu district.
+
+# Constituent (Government) Campuses
+
+These TU-run campuses offer the B.Sc. CSIT program:
+● Amrit Science Campus (ASCOL) – Kathmandu 
+● Patan Multiple Campus – Lalitpur 
+● Bhaktapur Multiple Campus – Bhaktapur 
+● Prithvi Narayan Campus – Pokhara 
+● Mahendra Morang Adarsha Multiple Campus – Morang
+● Birendra Multiple Campus – 
+● Mahendra Multiple Campus – Nepalgunj (Banke) 
+● Butwal Multiple Campus – Butwal 
+● Shree Siddhanath Science Campus – Kanchanpur
+● Ramsworup Ramsagar Multiple Campus – various 
+
+# TU‑Affiliated Colleges (Private / Community)
+Located mainly in Kathmandu Valley and beyond:
+1. St. Xavier’s College – Maitighar, Kathmandu +
+2. New Summit College – Purano Baneshwor, Kathmandu 
+3. Kathford Int’l College of Engineering & Mgmt – Balkumari, Lalitpur
+4. Prime College – Khusibu, Kathmandu 
+5. Nagarjuna College of IT – Pulchowk, Lalitpur 
+6. St. Lawrence College – Chabahil, Kathmandu 
+7. Nepalaya College – Kalanki, Kathmandu 
+8. Orchid International College – Sinamangal/Gaushala, Kathmandu 
+9. Madan Bhandari Memorial College – Anamnagar, Kathmandu 
+10. Vedas College – Jawlakhel, Lalitpur 
+11. Kathmandu Bernhardt College – Bafal, Kathmandu
+12. Academic International College – Gwarko, Lalitpur 
+13. Asian School of Management & Technology – Samakhushi, Kathmandu 
+14. Himalaya College of Engineering – Sankhamul, Kathmandu 
+15. Sagarmatha College of Science & Technology – Sanepa, Lalitpur 
+16. College of Applied Business (CAB) – Chabahil, Kathmandu 
+17. Ambition College – New Baneshwor, Kathmandu 
+18. Texas International College – Chabahil, Kathmandu 
+19. Deerwalk Institute of Technology (DWIT) – Sifal, Kathmandu 
+20. Trinity International College – Dillibazar, Kathmandu 
+21. Kathmandu College of Technology – Lokanthali, Bhaktapur 
+22. Swastik College – Thimi, Bhaktapur 
+23. Sambridhi College – Lokanthali, Bhaktapur 
+24. Asian College of Higher Studies – Kamaladi/Ekantakuna, Kathmandu 
+25. National College of Computer Studies (NCSS/NCCS) – Paknajol, Kathmandu
+● NIST College, National Infotec College, Niharika College, Birat Multiple College, AIMS
+    College, Godawari College (Itahari), Hetauda City College, Indreni College (Bharatpur),
+    Soch College of IT (Pokhara), Lumbini ICT College (Butwal) and others are available
+    outside the valley
+● Additionally, Padma Kanya Multiple Campus (women’s college in Kathmandu) is a TU
+    campus offering B.Sc. CSIT
 
 # Eligibility Criteria
 
-1. Should have successfully completed twelve years of schooling in the science stream or equivalent from any university, board, or institution.  
-2. Should have secured a minimum of the second division.  
-3. Should have successfully passed the entrance examination conducted by the Institute of Science and Technology (IOST), TU.  
-4. Complied with all the application procedures.
+The candidate applying for B.Sc. CSIT program:
+
+1. Should have successfully completed a twelve year of schooling in the science stream or
+    equivalent from any university, board or institution recognized by TU.
+2. Should have successfully passed the entrance examination conducted by TU securing at
+    least 35% marks. Compiled with all the application procedures.
+3. Should have secured a minimum of second division in their +2 or equivalent OR should
+    have secured at least C in all subjects in Grade 11 and Grade 12 by taking Physics and
+    Mathematics of 100 marks.
+OR
+Passed A level in Science (have studied Physics and Mathematics of 100 marks) and passed at
+least in D Grade
+OR
+Passed 3 Years Diploma in Engineering program from CTEVT taking both Physics and
+Mathematics.
+(Note: Both Biology and Mathematics group of students of +2 level are eligible to apply for the
+course)
 
 ---
+# Admission Criteria
+
+A student eligible to study the B.Sc. CSIT course should collect and submit the admission form
+from any of the B.Sc. CSIT colleges. The admission form generally opens during Shrawan /
+Bhadra every year.
+Entrance Examination:
+
+1. Tribhuvan University, Institute of Science and Technology, Dean office conducts the
+    entrance examination.
+2. The Entrance Examination will be of 100 Full Marks including the subjects of
+    Intermediate/10+2 level or equivalent incorporating English, Mathematics, Physics and
+    Chemistry subjects and the pass marks is 35.
+3. All the Questions of Entrance Examination will be Objective Type (MCQs).
+4. The Examination Time Duration will be of 2 hours.
+Admission Guidelines:
+1. The Admission Form and Entrance Model Questions can be received from any of the
+B.Sc. CSIT colleges.
+2. Students do not need to fill up the TU Admission Form in more than one college. Form
+filled from one college will be valid for all colleges/campuses.
+3. Students of Grade 12 Supplementary Exam can also fill up the TU Admission Form but
+such students should present the Academic Transcript of Passing 10+2/Intermediate
+level before publication of entrance result, otherwise the entrance examination result of
+such students will not be published.
+
 
 # Year-wise Course Outline
 
@@ -128,8 +217,16 @@ React
 
 # Career Opportunities
 
-**Web Developer**  
-Opportunities as a Web Developer include designing, coding, and optimizing web applications. You'll craft user-friendly interfaces, ensure responsive designs, and integrate databases, combining creativity with technical skills to deliver impactful digital solutions.
-
-**Project Manager**  
-Combining technical expertise and leadership, Computer Science graduates can manage IT projects, oversee teams, and ensure timely delivery of solutions, bridging communication between stakeholders and developers for efficient and successful outcomes.
+- Software Developer
+- Web Developer
+- Network Administrator
+- Database Administrator
+- IT Manager/Officer
+- Cryptographer-  Ergonomics Program Designer-  System Analyst
+- Project Manager
+- Document Specialist
+- Information System Auditor
+- Artificial Intelligence Specialist
+- Technical Writer
+- Information System Manager
+- Database Operator
