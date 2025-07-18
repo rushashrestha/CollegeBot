@@ -11,6 +11,8 @@ tiktoken
 langchain-community
 langchain-groq
 langchainhub
+langchain-chroma
+
 
 
 numpy==1.24.0
