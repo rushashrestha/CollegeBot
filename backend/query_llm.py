@@ -1,25 +1,26 @@
 import os
 from dotenv import load_dotenv
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+ # Updated import
 
 load_dotenv()
 
 class CSITQuerySystem:
     def __init__(self):
-        # Initialize with updated Chroma
+        """Initialize the query system with embeddings and paths"""
         self.embedding = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
             model_kwargs={'device': 'cpu'},
             encode_kwargs={'normalize_embeddings': True}
         )
-        self.vectordb_path = "data/scraped_pdfs/vector_db"
-        self.pdf_path = "data/scraped_pdfs/full_csit_program.pdf"
+        self.vectordb_path = "db"  # Directory for vector database
+        self.md_path = "data/BSW.md"  # Path to markdown file
         
-        # Verified institutional knowledge
+        # Verified institutional knowledge about programs
         self.college_programs = {
             "csit": {
                 "offered": True,
@@ -38,17 +39,17 @@ class CSITQuerySystem:
                 "intake": 60,
                 "website": "https://samriddhicollege.edu.np/bca",
                 "keywords": ["bca", "computer applications"]
-
-
             }
         }
 
     def create_vector_db(self):
-        """Create/update vector database from PDF"""
+        """Create/update vector database from Markdown file"""
         try:
-            loader = PyPDFLoader(self.pdf_path)
+            print("Loading markdown documents...")
+            loader = TextLoader(self.md_path)
             pages = loader.load_and_split()
             
+            # Configure text splitting for markdown content
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1000,
                 chunk_overlap=200,
@@ -56,21 +57,24 @@ class CSITQuerySystem:
             )
             splits = text_splitter.split_documents(pages)
             
+            print("Creating vector database...")
             vectordb = Chroma.from_documents(
                 documents=splits,
                 embedding=self.embedding,
                 persist_directory=self.vectordb_path
             )
             vectordb.persist()
+            print("Vector database created successfully!")
             return vectordb
         except Exception as e:
             print(f"Error creating vector DB: {str(e)}")
             return None
 
     def get_vectordb(self):
-        """Load existing vector database"""
+        """Load existing vector database or create new if doesn't exist"""
         try:
             if not os.path.exists(self.vectordb_path):
+                print("No existing vector DB found, creating new...")
                 return self.create_vector_db()
             return Chroma(
                 persist_directory=self.vectordb_path,
@@ -81,20 +85,20 @@ class CSITQuerySystem:
             return None
 
     def _answer_college_query(self, prompt):
-        """Handle questions about Samriddhi College programs"""
+        """Handle specific questions about college programs"""
         prompt_lower = prompt.lower()
         
-        # Check for program existence questions
+        # Program availability questions
         if any(q in prompt_lower for q in ["does samriddhi", "offer", "have", "provide"]):
             for program, details in self.college_programs.items():
                 if any(kw in prompt_lower for kw in details["keywords"]):
                     if details["offered"]:
                         return (f"Yes, Samriddhi College offers {details['title']} ({details['duration']}) "
-                            f"affiliated with {details['affiliation']}. Intake: {details['intake']} students. "
-                            f"More info: {details['website']}")
+                                f"affiliated with {details['affiliation']}. Intake: {details['intake']} students. "
+                                f"More info: {details['website']}")
                     return f"No, Samriddhi College does not currently offer {program.upper()}."
         
-        # List available programs
+        # Program listing
         if "what programs" in prompt_lower or "which courses" in prompt_lower:
             offered = [details['title'] for details in self.college_programs.values() 
                       if details['offered']]
@@ -102,22 +106,25 @@ class CSITQuerySystem:
         
         return None
 
-    def _query_pdf_content(self, prompt):
-        """Query the PDF content for academic information"""
+    def _query_md_content(self, prompt):
+        """Query the markdown content using similarity search"""
         try:
             vectordb = self.get_vectordb()
             if not vectordb:
-                return "Unable to access course documents."
+                return "Error: Could not access course documents."
                 
+            # Perform similarity search
             docs = vectordb.similarity_search(prompt, k=5)
             context = "\n".join([doc.page_content for doc in docs])
             
+            # Initialize LLM
             llm = ChatGroq(
                 temperature=0.2,
                 groq_api_key=os.getenv("GROQ_API_KEY"),
                 model_name="llama3-70b-8192"
             )
             
+            # Generate response with strict context adherence
             response = llm.invoke(f"""Answer using ONLY this context:
                                 {context}
                                 Question: {prompt}
@@ -128,16 +135,17 @@ class CSITQuerySystem:
             return f"Error querying documents: {str(e)}"
 
     def get_response(self, prompt):
-        """Main method to get responses"""
-        # First try institutional questions
+        """Main query interface"""
+        # First handle institutional questions
         college_response = self._answer_college_query(prompt)
         if college_response:
             return college_response
             
-        # Fall back to PDF content
-        return self._query_pdf_content(prompt)
+        # Then query markdown content
+        return self._query_md_content(prompt)
 
 def interactive_chat():
+    """Run interactive chat interface"""
     print("\nSamriddhi College Academic Query System")
     print("Type 'exit' to quit\n")
     
@@ -158,7 +166,7 @@ def interactive_chat():
             print(f"\nError: {str(e)}\n")
 
 if __name__ == "__main__":
-    # First-time setup (uncomment when PDF changes)
+    # Uncomment to rebuild vector database when markdown changes:
     # CSITQuerySystem().create_vector_db()
     
     interactive_chat()
