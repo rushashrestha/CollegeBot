@@ -1,3 +1,4 @@
+
 print("lets start")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,3 +21,5 @@ app.add_middleware(
 def root():
     
     return {"message": "College chatbot backend is running"}
+
+
