@@ -1,13 +1,13 @@
-from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
 
-# Enhanced PDF processing
-loader = PyPDFLoader("data/scraped_pdfs/full_csit_program.pdf")
+# Load Markdown file directly from data/BSW.md
+loader = TextLoader("data/BSW.md")
 documents = loader.load()
 
-# Improved text splitting
+# Text splitting configuration
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
     chunk_overlap=100,
@@ -16,17 +16,17 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 texts = text_splitter.split_documents(documents)
 
-# Add page numbers to metadata
+# Add metadata
 for i, text in enumerate(texts):
-    text.metadata['page'] = text.metadata.get('page', i//3 + 1)  # Group every 3 chunks
+    text.metadata['page'] = i//3 + 1  # Simple pagination
 
 embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-# Create vectorstore with enhanced metadata
+# Store vectors in local 'db' directory (will be created automatically)
 vectordb = Chroma.from_documents(
     texts, 
     embedding, 
     persist_directory="db",
-    collection_metadata={"hnsw:space": "cosine"}  # Better similarity metric
+    collection_metadata={"hnsw:space": "cosine"}
 )
 vectordb.persist()
