@@ -4,10 +4,15 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from flask import Flask,request,jsonify
+
+from flask_cors import CORS
 
 load_dotenv()
 
-class CollegeQuerySystem:
+class CSITQuerySystem:
     def __init__(self):
         self.embedding = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
@@ -87,4 +92,7 @@ def interactive_chat():
             print(f"\nError: {str(e)}\n")
 
 if __name__ == "__main__":
+    # Uncomment to rebuild vector database when markdown changes:
+    # CSITQuerySystem().create_vector_db()
+    
     interactive_chat()

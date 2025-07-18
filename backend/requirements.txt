@@ -11,7 +11,8 @@ tiktoken
 langchain-community
 langchain-groq
 langchainhub
-langchain-chroma
+flask 
+flask-cors 
 
 
 
