@@ -53,7 +53,7 @@ Approximately 700 colleges across Nepal offer BBS under Tribhuvan University.üè
 
 ## course outline
 
-# First Year
+# First Year course outline
 
 | Course Code | Course Title                      | Full Marks |
 | :---------- | :-------------------------------- | :--------- |
@@ -64,7 +64,7 @@ Approximately 700 colleges across Nepal offer BBS under Tribhuvan University.üè
 | MGT 213     | Principles of Management          | 100        |
 | Total       |                                   | 500        |
 
-# Second Year
+# Second Year course outline
 
 | Course Code | Course Title                                          | Full Marks |
 | :---------- | :---------------------------------------------------- | :--------- |
@@ -75,7 +75,7 @@ Approximately 700 colleges across Nepal offer BBS under Tribhuvan University.üè
 | MGT 223     | Organizational Behavior and Human Resource Management | 100        |
 | Total       |                                                       | 500        |
 
-# Third Year
+# Third Year course outline
 
 | Course Code | Course Title                      | Full Marks |
 | :---------- | :-------------------------------- | :--------- |
@@ -86,7 +86,7 @@ Approximately 700 colleges across Nepal offer BBS under Tribhuvan University.üè
 | MGT 226     | Foundation of Financial Systems   | 100        |
 | Total       |                                   | 500        |
 
-# Forth Year
+# Forth Year course outline
 
 | Course Code | Course Title                                | Full Marks |
 | :---------- | :------------------------------------------ | :--------- |
@@ -99,7 +99,6 @@ Approximately 700 colleges across Nepal offer BBS under Tribhuvan University.üè
 | Total       |                                             | 500        |
 
 # Concentration Areas in forth year
-
 | Accounting |                                        |
 | :--------- | :------------------------------------- |
 | ACC 250    | Accounting for Banking                 |
@@ -131,6 +130,14 @@ Approximately 700 colleges across Nepal offer BBS under Tribhuvan University.üè
 | MGT 257    | Event Management                      |
 | MGT 258    | Project Management                    |
 | MGT 259    | Technology and Information Management |
+
+## Non-Credit Course (NCC) for BBS provided by Samriddhi college
+- Accounting Package
+- Microsoft Office Course
+- SPSS Training
+- Proposal and Research Writing Training
+- Soft Skills Development Training
+- Statistics Training
 
 ## Career after BBS
 

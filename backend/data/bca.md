@@ -38,88 +38,88 @@ The entrance examination will be held for a total duration of 2 hours, providing
 
 # Course Outline
 
-## Semester 1
+## Semester 1 Course Outline
 
-| S.N. | Course Code | Course Title                       | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|:-----|:------------|:-----------------------------------|:------------|:-------------|:--------------|:---------|
-| 1    | CACS 101    | Computer Fundamental & Application | 4           | 4            | –             | 4        |
-| 2    | CASO 102    | Society & Technology               | 3           | 3            | –             | –        |
-| 3    | CAEN 103    | English I                          | 3           | 3            | 1             | –        |
-| 4    | CAMT 104    | Mathematics I                      | 3           | 3            | 1             | 1        |
-| 5    | CACS 105    | Digital Logic                      | 3           | 3            | –             | 2        |
-|      |             | **Total**                          | **16**      | **16**       | **2**         | **7**    |
+| S.N. | Course Code | Course Title                       | Credit Hrs. | 
+|:-----|:------------|:-----------------------------------|:------------|
+| 1    | CACS 101    | Computer Fundamental & Application | 4           | 
+| 2    | CASO 102    | Society & Technology               | 3           | 
+| 3    | CAEN 103    | English I                          | 3           | 
+| 4    | CAMT 104    | Mathematics I                      | 3           | 
+| 5    | CACS 105    | Digital Logic                      | 3           | 
+|      |             | Total                          | 16     | 
 
-## Semester 2
+## Semester 2 Course Outline
 
-| S.N. | Course Code | Course Title                         | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|:-----|:------------|:-----------------------------------|:------------|:-------------|:--------------|:---------|
-| 1    | CACS 151    | C Programming                      | 4           | 4            | –             | 4        |
-| 2    | CAAC 152    | Financial Accounting               | 3           | 3            | –             | –        |
-| 3    | CAEN 153    | English II                        | 3           | 3            | 1             | –        |
-| 4    | CAMT 154    | Mathematics II                    | 3           | 3            | 1             | 1        |
-| 5    | CACS 155    | Microprocessor and Computer Architecture | 3      | 3            | –             | 2        |
-|       |             | **Total**                        | **16**      | **16**       | **2**         | **7**    |
+| S.N. | Course Code | Course Title                         | Credit Hrs. | 
+|:-----|:------------|:-----------------------------------|:------------|
+| 1    | CACS 151    | C Programming                      | 4           | 
+| 2    | CAAC 152    | Financial Accounting               | 3           | 
+| 3    | CAEN 153    | English II                        | 3           | 
+| 4    | CAMT 154    | Mathematics II                    | 3           | 
+| 5    | CACS 155    | Microprocessor and Computer Architecture | 3      | 
+|       |             | Total                      | 16     |
 
-## Semester 3
-| S.N. | Course Code | Course Title                 | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|------|-------------|------------------------------|-------------|---------------|----------------|----------|
-| 1    | CACS 201    | Data Structure & Algorithms  | 3           | 3             | –              | 3        |
-| 2    | CAST 202    | Probability and Statistics   | 3           | 3             | 1              | 1        |
-| 3    | CACS 203    | System Analysis and Design   | 3           | 3             | 1              | –        |
-| 4    | CACS 204    | OOP in Java                  | 3           | 3             | 1              | 2        |
-| 5    | CACS 205    | Web Technology               | 3           | 3             | –              | 3        |
-|      |             | **Total**                    | **15**      | **15**        | **3**          | **9**    |
+## Semester 3 Course Outline
+| S.N. | Course Code | Course Title                 | Credit Hrs. | 
+|------|-------------|------------------------------|-------------|
+| 1    | CACS 201    | Data Structure & Algorithms  | 3           | 
+| 2    | CAST 202    | Probability and Statistics   | 3           | 
+| 3    | CACS 203    | System Analysis and Design   | 3           | 
+| 4    | CACS 204    | OOP in Java                  | 3           | 
+| 5    | CACS 205    | Web Technology               | 3           | 
+|      |             | Total                    | 15      |
 
-## Semester 4
-| S.N. | Course Code | Course Title                  | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|------|-------------|-------------------------------|-------------|--------------|----------------|----------|
-| 1    | CACS 251    | Operating System              | 3           | 3            | 1              | 2        |
-| 2    | CACS 252    | Numerical Method              | 3           | 3            | 1              | 2        |
-| 3    | CACS 253    | Software Engineering          | 3           | 3            | 1              | –        |
-| 4    | CACS 254    | Scripting Language            | 3           | 3            | –              | 3        |
-| 5    | CACS 255    | Database Management System    | 3           | 3            | 1              | 2        |
-| 6    | CAP I 256   | Project I                     | 2           | –            | –              | 4        |
-|      |             | **Total**                     | **17**      | **15**       | **4**          | **13**   |
+## Semester 4 Course Outline
+| S.N. | Course Code | Course Title                  | Credit Hrs. | 
+|------|-------------|-------------------------------|-------------|
+| 1    | CACS 251    | Operating System              | 3           | 
+| 2    | CACS 252    | Numerical Method              | 3           | 
+| 3    | CACS 253    | Software Engineering          | 3           | 
+| 4    | CACS 254    | Scripting Language            | 3           | 
+| 5    | CACS 255    | Database Management System    | 3           | 
+| 6    | CAP I 256   | Project I                     | 2           | 
+|      |             | Total                     | 17      | 
 
-## Semester 5
-| S.N. | Course Code | Course Title                    | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|------|-------------|----------------------------------|-------------|--------------|----------------|----------|
-| 1    | CACS 301    | MIS and e-Business              | 3           | 3            | –              | 2        |
-| 2    | CACS 302    | DotNet Technology               | 3           | 3            | –              | 3        |
-| 3    | CACS 303    | Computer Networking             | 3           | 3            | –              | 2        |
-| 4    | CAMG 304    | Introduction to Management      | 3           | 3            | 1              | –        |
-| 5    | CACS 305    | Computer Graphics and Animation | 3           | 3            | 1              | 2        |
-|      |             | **Total**                       | **15**      | **15**       | **2**          | **9**    |
+## Semester 5 Course Outline
+| S.N. | Course Code | Course Title                    | Credit Hrs. | 
+|------|-------------|----------------------------------|-------------|
+| 1    | CACS 301    | MIS and e-Business              | 3           | 
+| 2    | CACS 302    | DotNet Technology               | 3           | 
+| 3    | CACS 303    | Computer Networking             | 3           | 
+| 4    | CAMG 304    | Introduction to Management      | 3           |
+| 5    | CACS 305    | Computer Graphics and Animation | 3           | 
+|      |             | Total                       | 15      | 
 
-## Semester 6
-| S.N. | Course Code | Course Title              | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|------|-------------|---------------------------|-------------|--------------|----------------|----------|
-| 1    | CACS 351    | Mobile Programming        | 3           | 3            | –              | 3        |
-| 2    | CACS 352    | Distributed System        | 3           | 3            | 1              | –        |
-| 3    | CAEC 353    | Applied Economics         | 3           | 3            | 1              | –        |
-| 4    | CACS 354    | Advance Java Programming  | 3           | 3            | –              | 3        |
-| 5    | CACS355     | Network Programming       | 3           | 3            | –              | 2        |
-| 6    | CAPJ 356    | Project II                | 2           | –            | –              | 4        |
-|      |             | **Total**                 | **17**      | **15**       | **2**          | **12**   |
+## Semester 6 Course Outline
+| S.N. | Course Code | Course Title              | Credit Hrs. | 
+|------|-------------|---------------------------|-------------|
+| 1    | CACS 351    | Mobile Programming        | 3           | 
+| 2    | CACS 352    | Distributed System        | 3           | 
+| 3    | CAEC 353    | Applied Economics         | 3           | 
+| 4    | CACS 354    | Advance Java Programming  | 3           | 
+| 5    | CACS355     | Network Programming       | 3           | 
+| 6    | CAPJ 356    | Project II                | 2           | 
+|      |             | Total               | 17      |
 
-## Semester 7
-| S.N. | Course Code | Course Title                    | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|------|-------------|----------------------------------|-------------|--------------|----------------|----------|
-| 1    | CACS 401    | Cyber Law & Professional Ethics | 3           | 3            | 1              | –        |
-| 2    | CACS 402    | Cloud Computing                 | 3           | 3            | –              | 3        |
-| 3    | CAIM 403    | Internship                      | 3           | –            | –              | –        |
-| 4    |             | Elective I                      | 3           | 3            | –              | –        |
-| 5    |             | Elective II                     | 3           | 3            | –              | –        |
-|      |             | **Total**                       | **15**      | **12**       | **1**          | **3**    |
+## Semester 7 Course Outline
+| S.N. | Course Code | Course Title                    | Credit Hrs. | 
+|------|-------------|----------------------------------|-------------|
+| 1    | CACS 401    | Cyber Law & Professional Ethics | 3           | 
+| 2    | CACS 402    | Cloud Computing                 | 3           |
+| 3    | CAIM 403    | Internship                      | 3           | 
+| 4    |             | Elective I                      | 3           | 
+| 5    |             | Elective II                     | 3           | 
+|      |             | Total                      | 15      |
 
-## Semester 8
-| S.N. | Course Code | Course Title         | Credit Hrs. | Lecture Hrs. | Tutorial Hrs. | Lab Hrs. |
-|------|-------------|----------------------|-------------|--------------|----------------|----------|
-| 1    | CAOR 451    | Operations Research  | 3           | 3            | 1              | –        |
-| 2    | CAPJ 452    | Project III          | 6           | –            | –              | 12       |
-| 3    |             | Elective III         | 3           | 3            | –              | –        |
-| 4    |             | Elective IV          | 3           | 3            | –              | –        |
-|      |             | **Total**            | **15**      | **9**        |                |          |
+## Semester 8 Course Outline
+| S.N. | Course Code | Course Title         | Credit Hrs. | 
+|------|-------------|----------------------|-------------|
+| 1    | CAOR 451    | Operations Research  | 3           | 
+| 2    | CAPJ 452    | Project III          | 6           | 
+| 3    |             | Elective III         | 3           | 
+| 4    |             | Elective IV          | 3           | 
+|      |             | **Total**            | **15**      | 
  
 ## Electives
 | S.N. | Course Code | Course Title                     | S.N. | Course Code | Course Title                |
@@ -145,3 +145,19 @@ The entrance examination will be held for a total duration of 2 hours, providing
 - Linux  
 - Python  
 - React  
+
+# Career Opportunities
+
+- Software Developer
+- Web Developer
+- Network Administrator
+- Database Administrator
+- IT Manager/Officer
+- Cryptographer-  Ergonomics Program Designer-  System Analyst
+- Project Manager
+- Document Specialist
+- Information System Auditor
+- Artificial Intelligence Specialist
+- Technical Writer
+- Information System Manager
+- Database Operator
