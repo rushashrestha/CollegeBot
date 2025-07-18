@@ -4,7 +4,7 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
 
 # Enhanced PDF processing
-loader = PyPDFLoader("data/CSIT.pdf")
+loader = PyPDFLoader("data/scraped_pdfs/full_csit_program.pdf")
 documents = loader.load()
 
 # Improved text splitting
