@@ -22,21 +22,25 @@ class CollegeQuerySystem:
             "csit": {
                 "name": "Bachelor of Science in Computer Science and IT",
                 "duration": "4 years (8 semesters)",
-                "keywords": ["csit", "computer science"]
+                "seats": 48,
+                "keywords": ["csit", "computer science", "bsc csit"]
             },
             "bca": {
                 "name": "Bachelor of Computer Applications",
                 "duration": "4 years (8 semesters)",
+                "seats": 38,
                 "keywords": ["bca", "computer applications"]
             },
             "bsw": {
                 "name": "Bachelor of Social Work",
-                "duration": "4 years (8 semesters)",
+                "duration": "4 years ",
+                "seats": 60,
                 "keywords": ["bsw", "social work"]
             },
             "bbs": {
                 "name": "Bachelor of Business Studies",
-                "duration": "4 years (8 semesters)",
+                "duration": "4 years ",
+                "seats": 60,
                 "keywords": ["bbs", "business studies"]
             }
         }
@@ -56,18 +60,37 @@ class CollegeQuerySystem:
                 return program, data
         return None, None
 
-    def query_documents(self, question, program=None, k=10):
-        """Query documents with optional program filter"""
+    def query_documents(self, question, program=None, k=15):
+        """Enhanced document querying with multiple search strategies"""
         vectordb = self.get_vectordb()
+        
+        # Strategy 1: Direct search with program filter
         if program:
-            docs = vectordb.similarity_search(
-                question,
-                k=k,
-                filter={"program": program}
-            )
-        else:
-            docs = vectordb.similarity_search(question, k=k)
-        return "\n\n".join([doc.page_content for doc in docs])
+            try:
+                docs = vectordb.similarity_search(
+                    question,
+                    k=k,
+                    filter={"program": program}
+                )
+                if docs:
+                    return "\n\n".join([doc.page_content for doc in docs])
+            except:
+                pass
+        
+        # Strategy 2: Broad search without filter
+        docs = vectordb.similarity_search(question, k=k)
+        if docs:
+            return "\n\n".join([doc.page_content for doc in docs])
+        
+        # Strategy 3: Keyword-based search for general college info
+        general_terms = ["samriddhi", "college", "principal", "director", "chairman"]
+        for term in general_terms:
+            if term in question.lower():
+                docs = vectordb.similarity_search(term, k=k)
+                if docs:
+                    return "\n\n".join([doc.page_content for doc in docs])
+        
+        return ""
 
     def _extract_courses_directly(self, context, semester):
         """Directly extract courses from table data"""
@@ -75,133 +98,199 @@ class CollegeQuerySystem:
         current_semester = False
         
         for line in context.split('\n'):
-            if f"Semester {semester}" in line or f"| Semester {semester}" in line:
+            # More flexible semester detection
+            semester_patterns = [
+                f"Semester {semester}",
+                f"| Semester {semester}",
+                f"## Semester {semester}",
+                f"# Semester {semester}"
+            ]
+            
+            if any(pattern in line for pattern in semester_patterns):
                 current_semester = True
                 continue
-            elif "Semester" in line and current_semester:
+            elif any(f"Semester {i}" in line for i in range(1, 9) if i != int(semester)) and current_semester:
                 break
                 
-            if current_semester and '|' in line and 'Course Code' not in line:
+            if current_semester and '|' in line and 'Course Code' not in line and line.strip():
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 if len(parts) >= 3:
                     course_code = parts[1] if len(parts) > 1 else ""
                     course_name = parts[2] if len(parts) > 2 else ""
                     credits = parts[3] if len(parts) > 3 else ""
-                    courses.append(f"- {course_name} ({course_code}): {credits} credits")
+                    if course_name and course_name != "---":
+                        courses.append(f"- {course_name} ({course_code}): {credits} credits")
         
         return courses
 
     def _handle_course_listing(self, question, program_data):
-        """Strict course listing handler that only uses source data"""
-        # First try to get direct table data
+        """Enhanced course listing handler"""
+        # Get comprehensive context
         context = self.query_documents(
-            f"Semester courses from {program_data['name']}",
+            f"courses curriculum syllabus {program_data['name']} semester",
             program=program_data['keywords'][0],
-            k=15  # Get more documents to ensure we capture full tables
+            k=20
         )
         
-        # Extract semester number from question
-        semester = next((word for word in question.split() if word.isdigit()), "1")
+        # Extract semester number
+        semester = "1"  # default
+        words = question.split()
+        for i, word in enumerate(words):
+            if word.isdigit() and 1 <= int(word) <= 8:
+                semester = word
+                break
+            elif word.lower() in ["first", "1st"]:
+                semester = "1"
+            elif word.lower() in ["second", "2nd"]:
+                semester = "2"
+            elif word.lower() in ["third", "3rd"]:
+                semester = "3"
+            elif word.lower() in ["fourth", "4th", "forth"]:
+                semester = "4"
         
-        # Direct extraction from tables
+        # Try direct extraction first
         courses = self._extract_courses_directly(context, semester)
         
         if courses:
             return (
                 f"{program_data['name']} Semester {semester} Courses:\n" +
                 '\n'.join(courses) +
-                f"\n(Source: {program_data['keywords'][0].upper()} document)"
+                f"\n\n(Source: {program_data['keywords'][0].upper()} curriculum document)"
             )
         
-        # Fallback to LLM with strict instructions if direct extraction fails
+        # Fallback to LLM with enhanced prompt
         prompt = ChatPromptTemplate.from_template("""
-        EXTRACT DON'T CREATE! List courses EXACTLY as shown in this context:
-        {context}
+        You are a helpful assistant that extracts course information from college documents.
         
-        For Semester {semester} of {program}.
-        
-        Rules:
-        1. Use ONLY the course names and codes from tables
-        2. NEVER invent new courses
-        3. Format as:
-        - Course Name (CODE): Credits
-        - ...
-        
-        4. If no courses found, say "Course information not available"
-        """)
-        
-        chain = prompt | ChatGroq(
-            temperature=0,  # Minimize creativity
-            model_name="llama3-70b-8192",
-            groq_api_key=os.getenv("GROQ_API_KEY")
-        ) | StrOutputParser()
-        
-        return chain.invoke({
-            "program": program_data['name'],
-            "semester": semester,
-            "context": context
-        }) + f"\n(Source: {program_data['keywords'][0].upper()} document)"
-
-    def generate_response(self, question):
-        """Generate response with strict adherence to source data"""
-        program, program_data = self.detect_program(question)
-        
-        # Handle semester count questions
-        if "how many semesters" in question.lower() and program_data:
-            return f"{program_data['name']} has {program_data['duration']}.\n(Source: {program.upper()} document)"
-        
-        # Handle course listing questions
-        if any(phrase in question.lower() for phrase in 
-              ["courses in semester", "list of courses", "course structure", "subjects in"]):
-            if not program_data:
-                return "Please specify which program (e.g., BCA, CSIT)."
-            return self._handle_course_listing(question, program_data)
-        
-        # General questions
-        context = self.query_documents(question, program)
-        
-        prompt = ChatPromptTemplate.from_template("""
-        Answer this question using ONLY this context:
+        Context from college documents:
         {context}
         
         Question: {question}
         
-        Rules:
-        1. Be factual and concise
-        2. Never invent information
-        3. If unsure, say "Information not available in documents"
-        4. Add "(Source: {source})" at the end
+        Instructions:
+        1. Look for courses in Semester {semester} of {program}
+        2. Extract course names, codes, and credit hours if available
+        3. Format as a clear list
+        4. If you find partial information, provide what you can
+        5. Only say "information not found" if absolutely no relevant content exists
+        
+        Provide a helpful response based on the available information.
         """)
         
         chain = prompt | ChatGroq(
-            temperature=0.1,  # Low temperature for accuracy
+            temperature=0.2,
             model_name="llama3-70b-8192",
             groq_api_key=os.getenv("GROQ_API_KEY")
         ) | StrOutputParser()
         
-        return chain.invoke({
-            "question": question,
+        response = chain.invoke({
+            "program": program_data['name'],
+            "semester": semester,
             "context": context,
-            "source": program.upper() + " document" if program else "college documents"
+            "question": question
         })
+        
+        return response + f"\n\n(Source: {program_data['keywords'][0].upper()} document)"
+
+    def generate_response(self, question):
+        """Enhanced response generation with better context handling"""
+        program, program_data = self.detect_program(question)
+        
+        # Handle semester count questions
+        if "how many semesters" in question.lower() and program_data:
+            return f"{program_data['name']} has {program_data['duration']}.\n\n(Source: {program.upper()} program information)"
+        
+        # Handle course listing questions
+        course_keywords = ["courses in semester", "list of courses", "course structure", 
+                          "subjects in", "curriculum", "syllabus", "semester courses"]
+        if any(phrase in question.lower() for phrase in course_keywords):
+            if not program_data:
+                return "Please specify which program (e.g., BCA, CSIT, BSW, BBS) you're asking about."
+            return self._handle_course_listing(question, program_data)
+        
+        # Enhanced general query handling
+        context = self.query_documents(question, program)
+        
+        if not context or len(context.strip()) < 10:
+            # Try broader search
+            context = self.query_documents(question, None, k=20)
+        
+        if not context or len(context.strip()) < 10:
+            return "I couldn't find specific information about your question in the available documents. Could you try rephrasing your question or be more specific?"
+        
+        # Enhanced prompt for better responses
+        prompt = ChatPromptTemplate.from_template("""
+        You are a helpful assistant providing information about Samriddhi College and its programs.
+        
+        Available information:
+        {context}
+        
+        Question: {question}
+        
+        Instructions:
+        1. Provide a clear, helpful answer based on the available information
+        2. Be specific and accurate
+        3. If the information partially answers the question, provide what you can
+        4. Use a conversational but professional tone
+        5. Only say information is "not available" if you truly cannot find any relevant details
+        6. Focus on being helpful rather than overly cautious
+        
+        Answer the question based on the provided context.
+        """)
+        
+        chain = prompt | ChatGroq(
+            temperature=0.3,
+            model_name="llama3-70b-8192",
+            groq_api_key=os.getenv("GROQ_API_KEY")
+        ) | StrOutputParser()
+        
+        response = chain.invoke({
+            "question": question,
+            "context": context
+        })
+        
+        # Add source attribution
+        source = f"{program.upper()} document" if program else "Samriddhi College documents"
+        return f"{response}\n\n(Source: {source})"
 
 def interactive_chat():
-    print("\nCollege Program Information System")
-    print("Supports: BCA, CSIT, BSW, BBS")
-    print("Type 'exit' to quit\n")
+    print("\n" + "="*60)
+    print("SAMRIDDHI COLLEGE INFORMATION SYSTEM")
+    print("="*60)
+    print("Available Programs: BCA, CSIT (BSc CSIT), BSW, BBS")
+    print("You can ask about:")
+    print("- College information (principal, directors, facilities)")
+    print("- Program details (duration, eligibility, career prospects)")
+    print("- Course structure and semester-wise subjects")
+    print("- Admission requirements and procedures")
+    print("\nType 'exit' or 'quit' to end the session")
+    print("="*60)
     
     system = CollegeQuerySystem()
     
     while True:
         try:
-            question = input("\nYour question: ").strip()
-            if question.lower() in ['exit', 'quit']:
+            question = input("\n💬 Your question: ").strip()
+            
+            if not question:
+                print("Please enter a question.")
+                continue
+                
+            if question.lower() in ['exit', 'quit', 'bye']:
+                print("\nThank you for using Samriddhi College Information System! 👋")
                 break
                 
+            print("\n🔍 Searching for information...")
             response = system.generate_response(question)
-            print(f"\n{response}\n")
+            print(f"\n📋 Answer:\n{response}")
+            print("\n" + "-"*60)
+            
+        except KeyboardInterrupt:
+            print("\n\nSession ended by user. Goodbye! 👋")
+            break
         except Exception as e:
-            print(f"\nError: {str(e)}\n")
+            print(f"\n❌ Error: {str(e)}")
+            print("Please try asking your question differently.")
 
 if __name__ == "__main__":
     interactive_chat()
