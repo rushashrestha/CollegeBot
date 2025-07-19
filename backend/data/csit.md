@@ -5,6 +5,8 @@ Field of Study: Science
 Alumni: 7 Graduated batch
 
 ## Duration - 4 years, 8 semesters, 126 Credit hours
+- Semester wise program.
+- Board exam is held in every 6 months 
 
 ---
 # Institutions offering BSc CSIT
@@ -183,13 +185,12 @@ such students will not be published.
 | Elective II | Elective II                   | 3            | 100        |
 |             | **Total**                      | **18**       | **600**    |
 # List of electives for semester 6
-| Electives | Course Code |
-| Applied Logic | CSC369 |
-| E-commerce | CSC370 |
-| Automation and Robotics | CSC371 |
-| Neural Networks | CSC372 |
-| Computer Hardware Design | CSC373 |
-| Cognitive Science | CSC374 |
+ 1. Applied Logic (CSC369)
+ 2. E-commerce (CSC370 )
+ 3. Automation and Robotics (CSC371 )
+ 4. Neural Networks (CSC372 )
+ 5. Computer Hardware Design (CSC373 )
+ 6. Cognitive Science (CSC374 )
 
 ## Semester 7 Course Outline
 
@@ -202,13 +203,12 @@ such students will not be published.
 | Elective III| Elective III                   | 3            | 100        |
 |             | **Total**                      | **15**       | **500**    |
 # List of electives for semester 7
-| Elective Code | Elective Title |
-| CSC369 | Applied Logic |
-| CSC370 | E-commerce |
-| CSC371 | Automation and Robotics |
-| CSC372 | Neural Networks |
-| CSC373 | Computer Hardware Design |
-| CSC374 | Cognitive Science |
+ 1. Applied Logic (CSC369)
+ 2. E-commerce (CSC370) 
+ 3. Automation and Robotics (CSC371)
+ 4. Neural Networks (CSC372)
+ 5. Computer Hardware Design (CSC373) 
+ 6. Cognitive Science (CSC374)
 
 ## Semester 8 Course Outline
 
@@ -220,19 +220,18 @@ such students will not be published.
 | Elective V  | Elective V               | 3            | 100        |
 |             | **Total**                | **15**       | **500**    |
 # List of electives for semester 8
-| Elective Code | Elective Title |
-| CSC463 | Advanced Networking with IPV6 | 
-| CSC464 | Distributed Networking |  
-| CSC465 | Game Technology | 
-| CSC466 | Distributed and Object Oriented Database | 
-| CSC467 | Introduction to Cloud Computing | 
-| CSC468 | Geographical Information System |  
-| CSC469 | Decision Support System and Expert System | 
-| CSC470 | Mobile Application Development |  
-| CSC471 | Real Time Systems | 
-| CSC472 | Network and System Administration | 
-| CSC473 | Embedded Systems Programming |  
-| MGT474 | International Business Management |  
+1. (CSC463 ) Advanced Networking with IPV6 
+2. ( CSC464 ) Distributed Networking  
+3. (CSC465 ) Game Technology 
+4. ( CSC466) Distributed and Object Oriented Database 
+5. (CSC467 ) Introduction to Cloud Computing 
+6.  (CSC468 ) Geographical Information System  
+7. (CSC469 ) Decision Support System and Expert System 
+8. (CSC470 ) Mobile Application Development  
+9. (CSC471 ) Real Time Systems 
+10. (CSC472 ) Network and System Administration 
+11. (CSC473 ) Embedded Systems Programming  
+12. (MGT474 ) International Business Management  
 
 ---
 

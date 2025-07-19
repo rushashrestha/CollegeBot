@@ -4,7 +4,9 @@ Field of Study: Humanities and Social Sciences
 
 Alumni: 2 Graduated batch
 
-Duration: 126 hours
+## Duration - 4 years, 8 semesters, 126 Credit hours
+- Semester wise program.
+- Board exam is held in every 6 months 
 
 ---
 

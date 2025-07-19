@@ -2,12 +2,10 @@
 
 Established in 2013 A.D., Samriddhi College at Lokanthali Bhaktapur, is offering B.Sc. CSIT, BCA, BBS, and BSW programs are affiliated with Tribhuvan University. The college aims to blend Eastern and Western academic traditions to deliver top-quality education in Nepal and beyond.
 
-## Seats
-
-- CSIT \- 48
-- BCA \- 38
-- BASW \- 60
-- BBS \- 60
+ ## Available Seats for CSIT \- 48
+ ## Available Seats for Seats BCA \- 38
+ ## Available Seats for Seats BASW \- 60
+ ## Available Seats for Seats BBS \- 60
 
 ## MISSION of Samriddhi college
 
@@ -64,5 +62,41 @@ Mr. Rabin Hada is the founder member/board of director of Samriddhi College, who
 - Library:  
   Samriddhi is very proud of its large library filled with hundreds of books, magazines, journals, maps and DVD’s covering diverse subjects from around the world. The college believes that the library should be the center of knowledge, curiosity and wonder, engaging its students as well as the local community in all areas of knowledge and understanding.
 - Computer Lab:  
-  Samriddhi is very proud of its state-of-the-art computer labs. Currently, we have two labs, each containing 24 high-tech computers. The computers are available for students during tech classes as well as throughout the day. The college believes in the importance of having the most up-to-date technology for our institution, and it champions its students’ curiosity both as a group and individually.  
+  Samriddhi is very proud of its state-of-the-art computer labs. Currently, we have four labs, each containing 24 high-tech computers. The computers are available for students during tech classes as well as throughout the day. The college believes in the importance of having the most up-to-date technology for our institution, and it champions its students’ curiosity both as a group and individually.  
   Samriddhi also welcomes computer experts from around the world. These various experts give workshops on different technical subjects and programs used both in Nepal and throughout the globe.
+
+## Samriddhi clubs
+   # Samriddhi Alumni Association
+    The Samriddhi Alumni Association is a network of former students from the Samriddhi educational institutions, aimed at fostering continued connection and collaboration among alumni. It serves as a platform for networking, mentorship, and mutual support in personal and professional growth. The association organizes events, reunions, and career development programs to keep alumni engaged. It also contributes to the institution’s growth through fundraising, volunteering, and sharing expertise. By maintaining strong alumni bonds, the association enhances community spirit and institutional pride.
+
+    # Samriddhi Social Club
+      Samriddhi Social Club empowers students to make a positive impact in their communities. Through volunteering, awareness campaigns, and charity drives, the club promotes social responsibility and teamwork. Members actively address societal challenges, fostering empathy and leadership while contributing to meaningful change.
+
+    # Samriddhi Cultural Club
+      Samriddhi Cultural Club celebrates diversity and creativity, promoting the rich cultural heritage of Nepal. Through events like festivals, talent shows, and art exhibitions, the club provides a platform for students to express their artistic talents and connect with their roots. It fosters unity and inclusivity, creating a vibrant and dynamic college community.
+
+    # Samriddhi Entrepreneurial Club
+      Samriddhi Entrepreneurial Club ignites the entrepreneurial spirit among students by fostering creativity, leadership, and innovation. The club organizes workshops, startup pitch events, and mentorship programs with industry leaders. Members explore real-world business challenges, develop problem-solving skills, and transform ideas into impactful ventures, preparing them for the dynamic world of entrepreneurship.
+
+    # Samriddhi Sports Club
+      Samriddhi Sports Club unites sports enthusiasts, fostering teamwork, discipline, and a healthy lifestyle. The club organizes tournaments, training sessions, and inter-college competitions, promoting a spirit of sportsmanship. With facilities for various sports and guidance from experienced coaches, it provides students with opportunities to excel both on and off the field.
+
+    # Samriddhi IT Club
+      Samriddhi IT Club serves as a dynamic platform for tech enthusiasts at Samriddhi College. The club fosters innovation and collaboration through workshops, hackathons, and seminars. Members actively engage in real-world projects, enhancing their skills in programming, design, and emerging technologies. With guidance from industry experts and opportunities for networking, the club empowers students to excel in the ever-evolving IT landscape.
+
+## Hult Prize at samriddhi College
+  The Hult Prize is the world’s largest student movement for social good, challenging young innovators to launch impact-driven startups that tackle global issues aligned with the UN Sustainable Development Goals. With over 1 million participants from 120+ countries, we inspire, train, and fund the next generation of social entrepreneurs culminating in a $1M USD prize to bring their vision to life. Fueled by passion, purpose, and bold ideas, we believe students have the power to reshape the future.
+  # PATHWAY TO Hult Prize Finals
+  1. OnCampus Program & Open Application
+  To start with Hult Prize, students compete in Qualifier Rounds via the On Campus Program or Open Application. Winners and selected startups advance to the National Competitions.
+  2. The National Competitions
+  Winners of On Campus Programs and top startups from the Open Application will compete in national events against teams from their countries/territories.
+  3. The Digital Incubator
+  The Hult Prize Digital Incubator will Welcome up to 60 startups to refine ideas, develop MVPs, and create go-to-market strategies with support from workshops and expert mentors.
+  4. Global Accelerator
+  Top startups from the incubator will join the global Accelerator at Hult Ashrige Castle. London, in 2025. This intensive program offers education, mentorship, networking, and demo days, helping startups scale quickly and bring their innovations to market.
+  5. Global Finals
+  At the Global Finals, six startups will pitch live to judges for a chance to win the $1 million Hult Prize, showcasing their passion, innovation, and dedication on a global stage.
+ 
+
+
