@@ -3,6 +3,8 @@
 The Bachelor of Social Work (BSW) program at Samriddhi College, affiliated with Tribhuvan University, offers a comprehensive foundation in social work. Emphasizing a multidisciplinary approach, the course integrates theories from various social sciences while upholding core social work and psychology values and principles. This holistic framework ensures students receive a well-rounded education that combines rigorous academic learning with practical fieldwork to address the pressing social issues of our time, both locally and globally.At Samriddhi College, the BSW program focuses two majors: Social Work and Psychology for experiential learning through extensive fieldwork, impactful internships, and global collaborations. Students engage in workshops, mock interviews, and pre-placement sessions to develop analytical skills, professional approaches, and compassion for social work. Guided by a diverse and knowledgeable faculty, students benefit from global perspectives and top-notch instruction. The program's success is reflected in the achievements of its graduates, who secure excellent placement opportunities and make meaningful contributions to society.
 
 ## Duration - 4 years, 126 Credit hours
+- Yearly program
+- Board exam is held yearly.
 
 ## TU affiliated BSW Colleges in Nepal
 
