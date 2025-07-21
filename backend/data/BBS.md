@@ -3,6 +3,8 @@
 The objective of the BBS College program is to develop students into competent managers for any sector of organized activity. The BBS Academic Programme is based on the principle that graduates will spend a major portion of their life in a constantly changing environment. Therefore, the student should have an opportunity to obtain a broad knowledge of the concepts and reality-based skills underlying the operation and management of organizations. Students looking for top management colleges and BBS college in Bhaktapur, Kathmandu Valley and all over Nepal usually join Samriddhi College.
 
 ## Duration \- 4 years, 126 Credit hours
+- Yearly program
+- Board exam is held yearly.
 
 ## TU affiliated BSW Colleges in Nepal
 
