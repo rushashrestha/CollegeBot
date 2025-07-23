@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
@@ -60,6 +61,19 @@ class CollegeQuerySystem:
                 return program, data
         return None, None
 
+    def _clean_table_formatting(self, text):
+        """Convert table data to more readable format"""
+        lines = []
+        for line in text.split('\n'):
+            if '|' in line:
+                # Simple table to list conversion
+                parts = [p.strip() for p in line.split('|') if p.strip()]
+                if len(parts) >= 3 and not any(h in line.lower() for h in ['header', '---']):
+                    lines.append(f"• {parts[2]} (Code: {parts[1]})")  # More user-friendly format
+                continue
+            lines.append(line)
+        return '\n'.join(lines)
+
     def query_documents(self, question, program=None, k=15):
         """Enhanced document querying with multiple search strategies"""
         vectordb = self.get_vectordb()
@@ -73,14 +87,16 @@ class CollegeQuerySystem:
                     filter={"program": program}
                 )
                 if docs:
-                    return "\n\n".join([doc.page_content for doc in docs])
+                    raw_context = "\n\n".join([doc.page_content for doc in docs])
+                    return self._clean_table_formatting(raw_context)
             except:
                 pass
         
         # Strategy 2: Broad search without filter
         docs = vectordb.similarity_search(question, k=k)
         if docs:
-            return "\n\n".join([doc.page_content for doc in docs])
+            raw_context = "\n\n".join([doc.page_content for doc in docs])
+            return self._clean_table_formatting(raw_context)
         
         # Strategy 3: Keyword-based search for general college info
         general_terms = ["samriddhi", "college", "principal", "director", "chairman"]
@@ -88,17 +104,17 @@ class CollegeQuerySystem:
             if term in question.lower():
                 docs = vectordb.similarity_search(term, k=k)
                 if docs:
-                    return "\n\n".join([doc.page_content for doc in docs])
+                    raw_context = "\n\n".join([doc.page_content for doc in docs])
+                    return self._clean_table_formatting(raw_context)
         
         return ""
 
     def _extract_courses_directly(self, context, semester):
-        """Directly extract courses from table data"""
+        """Directly extract courses from table data and reformat"""
         courses = []
         current_semester = False
         
         for line in context.split('\n'):
-            # More flexible semester detection
             semester_patterns = [
                 f"Semester {semester}",
                 f"| Semester {semester}",
@@ -119,10 +135,10 @@ class CollegeQuerySystem:
                     course_name = parts[2] if len(parts) > 2 else ""
                     credits = parts[3] if len(parts) > 3 else ""
                     if course_name and course_name != "---":
-                        courses.append(f"- {course_name} ({course_code}): {credits} credits")
+                        courses.append(f"• {course_name} (Code: {course_code}, Credits: {credits})")
         
         return courses
-
+    
     def _handle_course_listing(self, question, program_data):
         """Enhanced course listing handler"""
         # Get comprehensive context
@@ -161,20 +177,20 @@ class CollegeQuerySystem:
         # Fallback to LLM with enhanced prompt
         prompt = ChatPromptTemplate.from_template("""
         You are a helpful assistant that extracts course information from college documents.
-        
+
         Context from college documents:
         {context}
-        
+
         Question: {question}
-        
+
         Instructions:
-        1. Look for courses in Semester {semester} of {program}
-        2. Extract course names, codes, and credit hours if available
-        3. Format as a clear list
-        4. If you find partial information, provide what you can
-        5. Only say "information not found" if absolutely no relevant content exists
-        
-        Provide a helpful response based on the available information.
+        1. Extract course information from any tables or text
+        2. Present the information in a clear, bullet-point list format
+        3. Include course names, codes, and credit hours when available
+        4. Do NOT maintain the original table format
+        5. Make the response easy to read
+
+        Provide the course information as a well-formatted list:
         """)
         
         chain = prompt | ChatGroq(
