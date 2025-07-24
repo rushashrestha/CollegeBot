@@ -32,9 +32,9 @@ const parseCourseContent = (text) => {
 };
 
 // Component to render course table
-const CourseTable = ({ courses, semester }) => (
+const CourseTable = ({ courses }) => (
   <div className="course-table-container">
-    <h3>CSIT {semester} Semester Courses</h3>
+    {/* <h3>CSIT {semester} Semester Courses</h3> */}
     <table className="course-table">
       <thead>
         <tr>
@@ -88,6 +88,13 @@ function ChatBot() {
   const [showLoader, setShowLoader] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [query, setQuery] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    { id: 1, title: 'CSIT Course Information', timestamp: 'Today' },
+    { id: 2, title: 'Previous Conversation', timestamp: 'Yesterday' },
+    { id: 3, title: 'General Questions', timestamp: '2 days ago' }
+  ]);
   const [messages, setMessages] = useState([
     { text: 'Hello! Welcome to Samriddhi ChatBot. Ask me anything.', sender: 'bot' }
   ]);
@@ -164,49 +171,146 @@ function ChatBot() {
     navigate('/login');
   };
 
+  const handleNewChat = () => {
+    setMessages([
+      { text: 'Hello! Welcome to Samriddhi ChatBot. Ask me anything.', sender: 'bot' }
+    ]);
+    setSidebarOpen(false);
+  };
+
   return (
     <div className={`app-container ${darkMode ? 'dark' : 'light'}`}>
-      <div className="header">
-        <h1>Samriddhi-ChatBot</h1>
-        <div className="auth-buttons">
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
-          <button 
-            className="theme-btn"
-            onClick={() => setDarkMode(!darkMode)}
-          >
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
+      {/* Sidebar */}
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <button className="new-chat-btn" onClick={handleNewChat}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            New chat
           </button>
         </div>
-      </div>
-
-      <div className="chat-container">
-        <div className="messages">
-          {messages.map((msg, index) => (
-            <div key={index} className={`message ${msg.sender}`}>
-              {msg.sender === 'bot' ? (
-                <FormattedMessage text={msg.text} />
-              ) : (
-                msg.text
-              )}
+        
+        <div className="chat-history">
+          <h3>Recent Chats</h3>
+          {chatHistory.map(chat => (
+            <div key={chat.id} className="chat-history-item">
+              <div className="chat-title">{chat.title}</div>
+              <div className="chat-timestamp">{chat.timestamp}</div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
+        </div>
+        
+        {/* Profile Section */}
+        <div className="profile-section">
+          <div className="profile-trigger" onClick={() => setProfileOpen(!profileOpen)}>
+            <div className="profile-avatar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span>My Profile</span>
+            <svg className={`chevron ${profileOpen ? 'up' : 'down'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 15L12 9L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          
+          {profileOpen && (
+            <div className="profile-dropdown">
+              <div className="profile-info">
+                <div className="username">User123</div>
+                <div className="email">user@example.com</div>
+              </div>
+              <button className="logout-btn" onClick={handleLogout}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <polyline points="16,17 21,12 16,7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Sidebar Overlay */}
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+      
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Header */}
+        <div className="header">
+          <div className="header-left">
+            <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <h1>Samriddhi ChatBot</h1>
+          </div>
+          
+          <div className="header-right">
+            <button 
+              className="theme-toggle"
+              onClick={() => setDarkMode(!darkMode)}
+              title={`Switch to ${darkMode ? 'light' : 'dark'} mode`}
+            >
+              {darkMode ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
 
-      <div className="input-container">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type your question..."
-        />
-        <button className="send-btn" onClick={handleSend}>
-          Send
-        </button>
+        {/* Chat Container */}
+        <div className="chat-container">
+          <div className="messages">
+            {messages.map((msg, index) => (
+              <div key={index} className={`message ${msg.sender}`}>
+                {msg.sender === 'bot' ? (
+                  <FormattedMessage text={msg.text} />
+                ) : (
+                  msg.text
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* Input Container */}
+        <div className="input-container">
+          <div className="input-wrapper">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your question..."
+            />
+            <button className="send-btn" onClick={handleSend} disabled={!query.trim()}>
+              Send
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
