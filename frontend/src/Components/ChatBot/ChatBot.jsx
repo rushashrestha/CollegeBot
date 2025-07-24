@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Loader from "../Loader/Loader";
 import './ChatBot.css';
@@ -93,6 +93,16 @@ function ChatBot() {
   ]);
   
   const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom when new messages are added
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -182,6 +192,7 @@ function ChatBot() {
               )}
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
