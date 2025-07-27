@@ -241,6 +241,7 @@
   flex-direction: column;
   margin-left: 0;
   transition: margin-left 0.3s ease;
+  min-height: 100vh;
 }
 
 /* Header */
@@ -324,21 +325,18 @@
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
-  padding: 2rem;
+  padding: 0;
 }
+
 
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0;
+  padding: 1rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  min-height: 400px;
-  max-height: 60vh;
-  /* Hide scrollbar */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  gap: 1rem;
+  max-height: calc(100vh - 200px);
 }
 
 .messages::-webkit-scrollbar {
@@ -378,7 +376,7 @@
 
 /* Input Container */
 .input-container {
-  padding: 1.5rem 2rem;
+  padding: 1rem 1.5rem;
   background-color: #ffffff;
   border-top: 1px solid #e0e0e0;
   position: sticky;
