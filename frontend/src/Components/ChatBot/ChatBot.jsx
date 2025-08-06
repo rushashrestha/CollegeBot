@@ -219,8 +219,8 @@ function ChatBot() {
           {profileOpen && (
             <div className="profile-dropdown">
               <div className="profile-info">
-                <div className="username">User123</div>
-                <div className="email">user@example.com</div>
+                <div className="username">Guest</div>
+                <div className="email">-</div>
               </div>
               <button className="logout-btn" onClick={handleLogout}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
