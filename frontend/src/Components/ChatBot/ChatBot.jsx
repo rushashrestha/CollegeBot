@@ -250,7 +250,7 @@ function ChatBot() {
                 <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <h1>Samriddhi ChatBot</h1>
+            <h1>AskSamriddhi</h1>
           </div>
           
           <div className="header-right">
