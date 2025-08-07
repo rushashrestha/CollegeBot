@@ -53,7 +53,7 @@ const LoginSignup = () => {
     <div className="login-signup-container">
       <ToastContainer position="top-right" toastStyle={{ marginTop: "70px" }} />
       <div className="form-section">
-        <h2>{isLogin ? "Login to Samriddhi ChatBot" : "Join Samriddhi ChatBot"}</h2>
+        <h2>{isLogin ? "Login to AskSamriddhi" : "Join AskSamriddhi"}</h2>
         <input
           type="email"
           placeholder="Email Address"
