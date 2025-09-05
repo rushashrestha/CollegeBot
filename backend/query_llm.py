@@ -8,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
+print(f"API Key loaded: {os.getenv('GROQ_API_KEY')[:10]}...")  # Shows first 10 chars
 
 class CollegeQuerySystem:
     def __init__(self):
@@ -195,7 +196,7 @@ class CollegeQuerySystem:
         
         chain = prompt | ChatGroq(
             temperature=0.2,
-            model_name="llama3-70b-8192",
+            model_name="llama-3.3-70b-versatile",
             groq_api_key=os.getenv("GROQ_API_KEY")
         ) | StrOutputParser()
         
@@ -256,7 +257,7 @@ class CollegeQuerySystem:
         
         chain = prompt | ChatGroq(
             temperature=0.3,
-            model_name="llama3-70b-8192",
+            model_name="llama-3.3-70b-versatile",
             groq_api_key=os.getenv("GROQ_API_KEY")
         ) | StrOutputParser()
         
