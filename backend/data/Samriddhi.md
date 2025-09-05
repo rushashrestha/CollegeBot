@@ -8,15 +8,12 @@ Established in 2013 A.D., Samriddhi College at Lokanthali Bhaktapur, is offering
  ## Available Seats for Seats BBS \- 60
 
 ## MISSION of Samriddhi college
-
 At Samriddhi, we believe a good education should be progressive, engaging and imbued with inspiration. With these elements in place, it is assured that together we’ll build a brighter future.
 
 ## Vision of Samriddhi College
-
 Our mission is to provide a well-rounded education that transforms our students into dynamic leaders and engaged citizens of the world.
 
 ## Board Of Directors of Samriddhi college
-
 # Chairman of Samriddhi College \- Manohar Kumar Bhattarai
 
 Renowned ICT professional of Nepal, Mr. Manohar Kumar Bhattarai leads the Samriddhi group  
@@ -57,8 +54,25 @@ Dr. Dilli P. Sharma is a board of director of Samriddhi College. Dr. Sharma has 
 
 Mr. Rabin Hada is the founder member/board of director of Samriddhi College, who has more than 10 years of experience in teaching finance and investment in Nepal. He has M.Phil. Degree from Tribhuvan University, Nepal and Data Science Degree from MCT College, Canada. He worked for one of the largest bank of Canada, CIBC for 2 years as financial advisor. Currently, he is associated with Aviva Inc., Property & Casualty Insurance Company of Canada as Data Analyst.
 
-# Salient Features
+## Administrative Team of Samriddhi College
+# Chief Finance Officer(CFO) \- Bishownath Rijal
+# Sr. Program Officer \- Pratiksha Shakya
+# Sr. System Administrator \- Shyam Sundar Chakradhar
+# Career Service Center Officer(CSC Officer) \- Sajada Timilsina
+# IT System Officer \- Anup Pyakurel
+# Jr. Account Officer \-  Nina Karki
+# Jr. Admin Officer \- Januka Budhathoki
+# Library Assistant \-  Ruma Dhungel
+# Front Desk Assistant \- Sima Karki
+# Admin Assistant \- Sita K.C.
 
+## Academic Team of Samriddhi College
+# Head of Department(HOD) \- Sudip Raj Khadka
+# Academic Co-ordinator (BCA) \- Jeeban Dhungel
+# Academic Co-ordinator (BSW) \- Dipa Manandhar
+# Academic Co-ordinator (BBS) \- Alkama Rani Khan
+
+# Salient Features
 - Library:  
   Samriddhi is very proud of its large library filled with hundreds of books, magazines, journals, maps and DVD’s covering diverse subjects from around the world. The college believes that the library should be the center of knowledge, curiosity and wonder, engaging its students as well as the local community in all areas of knowledge and understanding.
 - Computer Lab:  
