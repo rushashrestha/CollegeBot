@@ -1,21 +1,15 @@
+// Login.jsx
 import React, { useState } from "react";
-import "./Loginsignup.css";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./LoginSignup.css";
 
-const LoginSignup = () => {
-  const [isLogin, setIsLogin] = useState(true);
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const navigate = useNavigate();
-
-  const isValidPassword = (password) => {
-    const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,}$/;
-    return regex.test(password);
-  };
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -23,25 +17,20 @@ const LoginSignup = () => {
       return;
     }
 
-    if (!isLogin && password !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-
-    if (!isLogin && !isValidPassword(password)) {
-      toast.error("Password must be at least 6 characters, include a number, letter, and special character.");
-      return;
-    }
-
-    // Simulate login/signup success (replace with actual authentication later)
     try {
-      if (isLogin) {
-        // Simulate login
-        toast.success("Login successful!");
-        setTimeout(() => navigate("/chat"), 1500);
+      // Check for admin credentials
+      if (email === 'admin@samriddhi.edu.np' && password === 'admin123') {
+        toast.success("Admin login successful!");
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('adminEmail', email);
+        localStorage.setItem('isAuthenticated', 'true');
+        setTimeout(() => navigate("/admin"), 1500);
       } else {
-        // Simulate signup
-        toast.success("Account created successfully!");
+        // Regular user login
+        toast.success("Login successful!");
+        localStorage.setItem('userRole', 'user');
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('isAuthenticated', 'true');
         setTimeout(() => navigate("/chat"), 1500);
       }
     } catch (error) {
@@ -50,51 +39,44 @@ const LoginSignup = () => {
   };
 
   return (
-    <div className="login-signup-container">
+    <div className="login-container">
       <ToastContainer position="top-right" toastStyle={{ marginTop: "70px" }} />
       <div className="form-section">
-        <h2>{isLogin ? "Login to AskSamriddhi" : "Join AskSamriddhi"}</h2>
+        <h2>Login to AskSamriddhi</h2>
+        
         <input
           type="email"
           placeholder="Email Address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="login-input"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="login-input"
         />
-        {!isLogin && (
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-        )}
+        
         <button onClick={handleSubmit}>
-          {isLogin ? "Continue" : "Register"}
+          Continue
         </button>
-        <p>
-          {isLogin ? "Don't have an account?" : "Already have an account?"}
-          <span onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? " Sign Up" : " Login"}
-          </span>
-        </p>
-        <div className="guest-access">
-          <p>or</p>
-          <button 
-            className="guest-btn"
-            onClick={() => navigate("/chat")}
-          >
-            Continue as Guest
-          </button>
+
+        <div className="access-options">
+          <div className="guest-access">
+            <p>or</p>
+            <button 
+              className="guest-btn"
+              onClick={() => navigate("/chat")}
+            >
+              Continue as Guest
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default LoginSignup;
+export default Login;

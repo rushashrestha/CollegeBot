@@ -1,10 +1,13 @@
-.login-signup-container {
+/* Login.css */
+.login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  width: 100%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .form-section {
@@ -19,7 +22,6 @@
   border-radius: 18px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   animation: fadeInUp 0.6s ease forwards;
-  opacity: 0;
 }
 
 .form-section h2 {
@@ -31,7 +33,7 @@
   letter-spacing: 0.5px;
 }
 
-.form-section input {
+.login-input {
   padding: 14px 16px;
   border: 1px solid #ccc;
   border-radius: 10px;
@@ -40,9 +42,10 @@
   outline: none;
   background-color: white;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: #333; /* Ensure text is visible */
 }
 
-.form-section input:focus {
+.login-input:focus {
   border-color: #6c63ff;
   box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
 }
@@ -69,13 +72,6 @@
   font-size: 14px;
   color: #555;
   margin: 0;
-}
-
-.form-section span {
-  color: #6c63ff;
-  cursor: pointer;
-  margin-left: 5px;
-  font-weight: 500;
 }
 
 .guest-access {
@@ -106,6 +102,10 @@
   transform: translateY(-1px);
 }
 
+.access-options {
+  margin-top: 20px;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -118,7 +118,6 @@
 }
 
 /* Responsive Styles */
-
 @media (max-width: 768px) {
   .form-section {
     padding: 40px 30px;
@@ -138,7 +137,7 @@
     font-size: 22px;
   }
 
-  .form-section input,
+  .login-input,
   .form-section button {
     font-size: 14px;
     padding: 12px;

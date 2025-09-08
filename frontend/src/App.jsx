@@ -2,21 +2,35 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginSignup from './Components/LoginSignup/LoginSignup';
 import ChatBot from './Components/ChatBot/ChatBot';
-import './App.css';
+import AdminDashboard from './Components/AdminDashboard/AdminDashboard';
+import AdminRoute from './utils/AdminRoute';
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
-          {/* Default route redirects to login */}
+          {/* Default route - redirect to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           
-          {/* Login/Signup page */}
+          {/* Login/Signup route */}
           <Route path="/login" element={<LoginSignup />} />
           
-          {/* Chat page */}
+          {/* Chat route - accessible to all authenticated users and guests */}
           <Route path="/chat" element={<ChatBot />} />
+          
+          {/* Admin route - protected, only for admin users */}
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } 
+          />
+          
+          {/* Catch all route - redirect to login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </Router>
