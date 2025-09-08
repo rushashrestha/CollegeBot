@@ -241,7 +241,8 @@
   flex-direction: column;
   margin-left: 0;
   transition: margin-left 0.3s ease;
-  min-height: 100vh;
+  width: 100%;
+  height: 100vh;
 }
 
 /* Header */
@@ -322,10 +323,10 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-width: 800px;
-  margin: 0 auto;
-  width: 100%;
+  width: 100%; /* full width */
+  height: 100vh; /* full height */
   padding: 0;
+  margin: 0 auto;
 }
 
 
@@ -550,6 +551,166 @@
   }
 }
 
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.mic-btn:hover {
+  transform: scale(1.05);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Speech Recognition Styles */
+
+/* Input wrapper layout */
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Microphone button - clean, no background */
+.mic-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.mic-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+  transform: scale(1.1);
+}
+
+.mic-btn:active {
+  transform: scale(0.95);
+}
+
+/* When listening - red color like ChatGPT */
+.mic-btn.listening {
+  color: #ef4444;
+  animation: pulse-glow 2s infinite;
+}
+
+.mic-btn.listening:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Dark mode support */
+.dark .mic-btn {
+  color: #999;
+}
+
+.dark .mic-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.dark .mic-btn.listening {
+  color: #ef4444;
+}
+
+.dark .mic-btn.listening:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Input field when listening */
+.listening-input {
+  color: #007bff !important;
+  font-style: italic;
+}
+
+/* Listening status indicator */
+.listening-status {
+  text-align: center;
+  margin-top: 8px;
+  color: #007bff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Speech unsupported message */
+.speech-unsupported {
+  text-align: center;
+  margin-top: 4px;
+  color: #666;
+  font-size: 12px;
+}
+
+.dark .speech-unsupported {
+  color: #999;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Focus states for accessibility */
+
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .mic-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .listening-status {
+    font-size: 12px;
+  }
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
   .sidebar {
@@ -604,4 +765,5 @@
     padding: 0.625rem;
   }
 }
+
 
