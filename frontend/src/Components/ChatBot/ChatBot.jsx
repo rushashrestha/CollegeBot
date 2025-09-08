@@ -18,7 +18,6 @@ const parseCourseContent = (text) => {
   const courses = [];
   
   lines.forEach(line => {
-    // Match patterns like "3 (Code: Theory of Computation)" or "• 3 (Code: Theory of Computation)"
     const match = line.match(/[•*-]?\s*(\d+)\s*\([^:]*:\s*([^)]+)\)/);
     if (match) {
       courses.push({
@@ -34,7 +33,6 @@ const parseCourseContent = (text) => {
 // Component to render course table
 const CourseTable = ({ courses }) => (
   <div className="course-table-container">
-    {/* <h3>CSIT {semester} Semester Courses</h3> */}
     <table className="course-table">
       <thead>
         <tr>
@@ -56,7 +54,6 @@ const CourseTable = ({ courses }) => (
 
 // Component to render formatted message
 const FormattedMessage = ({ text }) => {
-  // Check if it's course content
   if (detectCourseContent(text)) {
     const courses = parseCourseContent(text);
     const semesterMatch = text.match(/(\w+)\s+semester/i);
@@ -67,13 +64,12 @@ const FormattedMessage = ({ text }) => {
     }
   }
   
-  // For regular text, convert basic markdown-like formatting
   const formatText = (text) => {
     return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/^[•*-]\s+(.+)$/gm, '<li>$1</li>') // List items
-      .replace(/\n/g, '<br/>'); // Line breaks
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^[•*-]\s+(.+)$/gm, '<li>$1</li>')
+      .replace(/\n/g, '<br/>');
   };
   
   return (
@@ -98,9 +94,73 @@ function ChatBot() {
   const [messages, setMessages] = useState([
     { text: 'Hello! Welcome to Samriddhi ChatBot. Ask me anything.', sender: 'bot' }
   ]);
+
+  // Speech Recognition States
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [transcript, setTranscript] = useState('');
   
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      setSpeechSupported(true);
+      
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        setTranscript(interimTranscript);
+        
+        if (finalTranscript) {
+          setQuery(finalTranscript);
+          setTranscript('');
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        setTranscript('');
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        setTranscript('');
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
@@ -124,8 +184,27 @@ function ChatBot() {
     return <Loader />;
   }
 
+  // Speech Recognition Functions
+  const startListening = () => {
+    if (recognitionRef.current && speechSupported) {
+      setQuery(''); // Clear existing text
+      recognitionRef.current.start();
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  };
+
   const handleSend = async () => {
     if (query.trim()) {
+      // Stop listening if currently active
+      if (isListening) {
+        stopListening();
+      }
+
       // Add user message immediately
       const userMessage = { text: query, sender: 'user' };
       setMessages(prev => [...prev, userMessage]);
@@ -176,6 +255,10 @@ function ChatBot() {
       { text: 'Hello! Welcome to Samriddhi ChatBot. Ask me anything.', sender: 'bot' }
     ]);
     setSidebarOpen(false);
+    // Stop any ongoing speech recognition
+    if (isListening) {
+      stopListening();
+    }
   };
 
   return (
@@ -296,20 +379,65 @@ function ChatBot() {
           </div>
         </div>
 
-        {/* Input Container */}
+        {/* Input Container with Speech Recognition */}
         <div className="input-container">
           <div className="input-wrapper">
             <input
               type="text"
-              value={query}
+              value={transcript || query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your question..."
+              placeholder={isListening ? "Listening..." : "Type your question or click the mic to speak..."}
+              className={transcript ? 'listening-input' : ''}
             />
-            <button className="send-btn" onClick={handleSend} disabled={!query.trim()}>
+            
+            {/* Speech Recognition Button */}
+            {speechSupported && (
+              <button
+                className={`mic-btn ${isListening ? 'listening' : ''}`}
+                onClick={isListening ? stopListening : startListening}
+                title={isListening ? "Stop listening" : "Start voice input"}
+              >
+                {isListening ? (
+                  // Stop/Pause icon
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="4" width="4" height="16" rx="2" fill="currentColor"/>
+                    <rect x="14" y="4" width="4" height="16" rx="2" fill="currentColor"/>
+                  </svg>
+                ) : (
+                  // Microphone icon
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C13.1046 2 14 2.89543 14 4V12C14 13.1046 13.1046 14 12 14C10.8954 14 10 13.1046 10 12V4C10 2.89543 10.8954 2 12 2Z" fill="currentColor"/>
+                    <path d="M19 10V12C19 16.4183 15.4183 20 11 20H13C17.4183 20 21 16.4183 21 12V10H19Z" fill="currentColor"/>
+                    <path d="M5 10V12C5 16.4183 8.58172 20 13 20H11C6.58172 20 3 16.4183 3 12V10H5Z" fill="currentColor"/>
+                    <rect x="11" y="20" width="2" height="4" fill="currentColor"/>
+                  </svg>
+                )}
+              </button>
+            )}
+            
+            <button 
+              className="send-btn" 
+              onClick={handleSend} 
+              disabled={!query.trim() && !transcript.trim()}
+            >
               Send
             </button>
           </div>
+          
+          {/* Speech Recognition Status */}
+          {isListening && (
+            <div className="listening-status">
+              <div className="pulse-dot" />
+              Listening... Speak now
+            </div>
+          )}
+          
+          {!speechSupported && (
+            <div className="speech-unsupported">
+              Speech recognition not supported in this browser
+            </div>
+          )}
         </div>
       </div>
     </div>
