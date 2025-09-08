@@ -292,7 +292,7 @@ const AdminDashboard = () => {
             <div className="settings-section">
               <h3>Students</h3>
               <ul>{students.map((s) => <li key={s.id}>{s.name} ({s.roll})</li>)}</ul>
-              <h3>Teachers</h3>
+              <h3>Teacher</h3>
               <ul>{teachers.map((t) => <li key={t.id}>{t.name} ({t.department})</li>)}</ul>
             </div>
           </div>
