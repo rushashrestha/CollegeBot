@@ -17,52 +17,97 @@ const AdminDashboard = () => {
 
   const adminEmail = localStorage.getItem("adminEmail") || "Admin";
 
-  // ----------------- Fetch Admin Data -----------------
-  const fetchAdminData = async () => {
+  // ----------------- Fetch Functions -----------------
+  const fetchStats = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const [statsRes, docsRes, queriesRes, studentsRes, teachersRes] = await Promise.all([
-        fetch("http://localhost:5000/admin/stats"),
-        fetch("http://localhost:5000/admin/documents"),
-        fetch("http://localhost:5000/admin/queries"),
-        fetch("http://localhost:5000/admin/students"),
-        fetch("http://localhost:5000/admin/teachers"),
-      ]);
-
-      if (!statsRes.ok) throw new Error("Stats API failed");
-      if (!docsRes.ok) throw new Error("Documents API failed");
-      if (!queriesRes.ok) throw new Error("Queries API failed");
-      if (!studentsRes.ok) throw new Error("Students API failed");
-      if (!teachersRes.ok) throw new Error("Teachers API failed");
-
-      const statsData = await statsRes.json();
-      const documentsData = await docsRes.json();
-      const queriesData = await queriesRes.json();
-      const studentsData = await studentsRes.json();
-      const teachersData = await teachersRes.json();
-
-      setStats(statsData);
-      setDocuments(documentsData.documents || []);
-      setQueries(queriesData.queries || []);
-      setStudents(studentsData.students || []);
-      setTeachers(teachersData.teachers || []);
+      const res = await fetch("http://localhost:5000/admin/stats");
+      if (!res.ok) throw new Error("Stats API failed");
+      const data = await res.json();
+      setStats(data);
     } catch (err) {
       console.error(err);
       setError(err.message);
       alert(`Fetch error: ${err.message}`);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/admin/documents");
+      if (!res.ok) throw new Error("Documents API failed");
+      const data = await res.json();
+      setDocuments(data.documents || []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
+  };
+
+  const fetchQueries = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/admin/queries");
+      if (!res.ok) throw new Error("Queries API failed");
+      const data = await res.json();
+      setQueries(data.queries || []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/admin/students");
+      if (!res.ok) throw new Error("Students API failed");
+      const data = await res.json();
+      setStudents(data.students || []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
+  };
+
+  const fetchTeachers = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/admin/teachers");
+      if (!res.ok) throw new Error("Teachers API failed");
+      const data = await res.json();
+      setTeachers(data.teachers || []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
+  };
+
+  const fetchDataForTab = (tab) => {
+    switch (tab) {
+      case "overview":
+        fetchStats();
+        break;
+      case "documents":
+        fetchDocuments();
+        break;
+      case "queries":
+        fetchQueries();
+        break;
+      case "settings":
+        fetchStudents();
+        fetchTeachers();
+        break;
+      default:
+        break;
     }
   };
 
   // ----------------- Lifecycle -----------------
   useEffect(() => {
-    fetchAdminData();
-    const interval = setInterval(fetchAdminData, 30000);
-    return () => clearInterval(interval);
+    fetchStats(); // always fetch stats on mount
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchDataForTab(activeTab);
+  }, [activeTab]);
 
   // ----------------- Handlers -----------------
   const handleLogout = () => {
@@ -75,7 +120,6 @@ const AdminDashboard = () => {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append("file", file);
 
@@ -86,7 +130,7 @@ const AdminDashboard = () => {
       });
       const data = await res.json();
       alert(`Document uploaded: ${data.message || "Success"}`);
-      fetchAdminData();
+      fetchDocuments();
     } catch (err) {
       alert("Upload failed");
     }
@@ -95,10 +139,8 @@ const AdminDashboard = () => {
   const deleteDocument = async (filename) => {
     if (!window.confirm(`Delete ${filename}?`)) return;
     try {
-      await fetch(`http://localhost:5000/admin/documents/${filename}`, {
-        method: "DELETE",
-      });
-      fetchAdminData();
+      await fetch(`http://localhost:5000/admin/documents/${filename}`, { method: "DELETE" });
+      fetchDocuments();
     } catch (err) {
       alert("Delete failed");
     }
@@ -106,10 +148,9 @@ const AdminDashboard = () => {
 
   const reprocessDocument = async (filename) => {
     try {
-      // This route is optional, currently not implemented in server.py
       await fetch(`http://localhost:5000/admin/documents/${filename}/reprocess`, { method: "POST" });
       alert("Reprocessing started");
-      fetchAdminData();
+      fetchDocuments();
     } catch (err) {
       alert("Reprocess failed");
     }
@@ -127,7 +168,6 @@ const AdminDashboard = () => {
   // ----------------- JSX -----------------
   return (
     <div className="admin-container">
-      {/* Header */}
       <header className="admin-header">
         <div className="header-content">
           <h1>Samriddhi Admin Dashboard</h1>
@@ -140,7 +180,6 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      {/* Navigation */}
       <nav className="admin-nav">
         <div className="nav-content">
           {["overview", "documents", "queries", "settings"].map((tab) => (
@@ -155,9 +194,8 @@ const AdminDashboard = () => {
         </div>
       </nav>
 
-      {/* Content */}
       <main className="admin-content">
-        {/* Overview Tab */}
+        {/* Overview */}
         {activeTab === "overview" && (
           <div className="overview-tab">
             <div className="stats-grid">
@@ -181,21 +219,13 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Documents Tab */}
+        {/* Documents */}
         {activeTab === "documents" && (
           <div className="documents-tab">
             <div className="tab-header">
               <h2>Document Management</h2>
-              <input
-                type="file"
-                id="file-upload"
-                accept=".md"
-                onChange={handleFileUpload}
-                style={{ display: "none" }}
-              />
-              <label htmlFor="file-upload" className="upload-btn">
-                Upload Document
-              </label>
+              <input type="file" id="file-upload" accept=".md" onChange={handleFileUpload} style={{ display: "none" }} />
+              <label htmlFor="file-upload" className="upload-btn">Upload Document</label>
             </div>
 
             <table className="documents-table">
@@ -216,12 +246,10 @@ const AdminDashboard = () => {
                     <td>{doc.size}</td>
                     <td>{doc.chunks}</td>
                     <td>{doc.lastModified}</td>
-                    <td>
-                      <span className={`status-badge ${doc.status}`}>{doc.status}</span>
-                    </td>
-                    <td>
-                      <button onClick={() => reprocessDocument(doc.name)}>Reprocess</button>
-                      <button onClick={() => deleteDocument(doc.name)}>Delete</button>
+                    <td><span className={`status-badge ${doc.status}`}>{doc.status}</span></td>
+                    <td className="actions">
+                      <button className="action-btn reprocess" onClick={() => reprocessDocument(doc.name)}>Reprocess</button>
+                      <button className="action-btn delete" onClick={() => deleteDocument(doc.name)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -230,7 +258,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Queries Tab */}
+        {/* Queries */}
         {activeTab === "queries" && (
           <div className="queries-tab">
             <h2>Query Logs</h2>
@@ -249,9 +277,7 @@ const AdminDashboard = () => {
                     <td>{q.query}</td>
                     <td>{q.timestamp}</td>
                     <td>{q.response_time}</td>
-                    <td>
-                      <span className={`status-badge ${q.status}`}>{q.status}</span>
-                    </td>
+                    <td><span className={`status-badge ${q.status}`}>{q.status}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -259,27 +285,15 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Settings Tab */}
+        {/* Settings */}
         {activeTab === "settings" && (
           <div className="settings-tab">
             <h2>Users</h2>
             <div className="settings-section">
               <h3>Students</h3>
-              <ul>
-                {students.map((s) => (
-                  <li key={s.id}>
-                    {s.name} ({s.roll})
-                  </li>
-                ))}
-              </ul>
+              <ul>{students.map((s) => <li key={s.id}>{s.name} ({s.roll})</li>)}</ul>
               <h3>Teachers</h3>
-              <ul>
-                {teachers.map((t) => (
-                  <li key={t.id}>
-                    {t.name} ({t.department})
-                  </li>
-                ))}
-              </ul>
+              <ul>{teachers.map((t) => <li key={t.id}>{t.name} ({t.department})</li>)}</ul>
             </div>
           </div>
         )}

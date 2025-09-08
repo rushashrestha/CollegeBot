@@ -396,3 +396,83 @@
 2025-09-08 12:33:08,469 - INFO - 127.0.0.1 - - [08/Sep/2025 12:33:08] "GET /admin/documents HTTP/1.1" 200 -
 2025-09-08 12:33:08,469 - INFO - 127.0.0.1 - - [08/Sep/2025 12:33:08] "GET /admin/students HTTP/1.1" 200 -
 2025-09-08 12:33:08,480 - INFO - 127.0.0.1 - - [08/Sep/2025 12:33:08] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:35:34,943 - WARNING -  * Debugger is active!
+2025-09-08 12:35:34,946 - INFO -  * Debugger PIN: 291-924-765
+2025-09-08 12:35:35,632 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:35:35,634 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:35:35,635 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:35:35,638 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:35:35,639 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:35:35,643 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:35:35,952 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:35:35,953 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:35:35,954 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:35:35,960 - INFO - 127.0.0.1 - - [08/Sep/2025 12:35:35] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:36:03,464 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:03] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:36:03,467 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:03] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:36:03,468 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:03] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:36:03,470 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:03] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:36:03,475 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:03] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:36:33,155 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:33] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:36:33,466 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:33] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:36:33,467 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:33] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:36:33,469 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:33] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:36:33,472 - INFO - 127.0.0.1 - - [08/Sep/2025 12:36:33] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:37:03,460 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:03] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:37:03,461 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:03] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:37:03,462 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:03] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:37:03,462 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:03] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:37:03,463 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:03] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:37:33,158 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:33] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:37:33,467 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:33] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:37:33,468 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:33] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:37:33,469 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:33] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:37:33,470 - INFO - 127.0.0.1 - - [08/Sep/2025 12:37:33] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:38:02,501 - INFO - 127.0.0.1 - - [08/Sep/2025 12:38:02] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:38:02,503 - INFO - 127.0.0.1 - - [08/Sep/2025 12:38:02] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:38:02,504 - INFO - 127.0.0.1 - - [08/Sep/2025 12:38:02] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:38:02,505 - INFO - 127.0.0.1 - - [08/Sep/2025 12:38:02] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:38:02,507 - INFO - 127.0.0.1 - - [08/Sep/2025 12:38:02] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:38:26,246 - INFO - 127.0.0.1 - - [08/Sep/2025 12:38:26] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-09-08 12:38:40,312 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-09-08 12:38:47,738 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2025-09-08 12:38:49,691 - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 12:38:49,705 - INFO - 127.0.0.1 - - [08/Sep/2025 12:38:49] "POST /api/query HTTP/1.1" 200 -
+2025-09-08 12:42:33,656 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\server.py', reloading
+2025-09-08 12:42:37,084 - WARNING -  * Debugger is active!
+2025-09-08 12:42:37,089 - INFO -  * Debugger PIN: 291-924-765
+2025-09-08 12:43:31,922 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:31] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:43:31,923 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:31] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:43:31,926 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:31] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:43:31,928 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:31] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:43:31,930 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:31] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:43:32,162 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:32] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:43:32,246 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:32] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:43:32,248 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:32] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:43:32,250 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:32] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:43:32,253 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:32] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:43:36,542 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:43:36,543 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:43:36,545 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:43:36,548 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:43:36,550 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:43:36,805 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:43:36,868 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:43:36,870 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:43:36,875 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:43:36,878 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:36] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:43:58,453 - INFO - 127.0.0.1 - - [08/Sep/2025 12:43:58] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-09-08 12:44:12,442 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-09-08 12:44:19,737 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2025-09-08 12:44:21,965 - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 12:44:21,986 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:21] "POST /api/query HTTP/1.1" 200 -
+2025-09-08 12:44:51,244 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:44:51,554 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:44:51,556 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:44:51,558 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/documents HTTP/1.1" 200 -
+2025-09-08 12:44:51,560 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:44:51,571 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/stats HTTP/1.1" 200 -
+2025-09-08 12:44:51,877 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/queries HTTP/1.1" 200 -
+2025-09-08 12:44:51,880 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/students HTTP/1.1" 200 -
+2025-09-08 12:44:51,884 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/teachers HTTP/1.1" 200 -
+2025-09-08 12:44:51,888 - INFO - 127.0.0.1 - - [08/Sep/2025 12:44:51] "GET /admin/documents HTTP/1.1" 200 -
