@@ -351,6 +351,9 @@ class CollegeQuerySystem:
         5. Include all relevant details that answer the question
         6. If the information partially answers the question, provide what you can
         7. Focus on being comprehensive and helpful
+        8. AVOID ASCII tables, pipe symbols, or messy formatting
+        9. Use clean bullet points or simple formatted text
+        10. Make the response easy to read and visually appealing
         
         Answer the question based on the provided context:
         """)
