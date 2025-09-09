@@ -1,11 +1,15 @@
-// Login.jsx
+// src/Components/LoginSignup/LoginSignup.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./LoginSignup.css";
 
-const Login = () => {
+// Firebase imports
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase/firebase"; // ✅ correct path
+
+const LoginSignup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -18,23 +22,30 @@ const Login = () => {
     }
 
     try {
-      // Check for admin credentials
-      if (email === 'admin@samriddhi.edu.np' && password === 'admin123') {
+      // ✅ Admin hardcoded login
+      if (email === "admin@samriddhi.edu.np" && password === "admin123") {
         toast.success("Admin login successful!");
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('adminEmail', email);
-        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem("userRole", "admin");
+        localStorage.setItem("adminEmail", email);
+        localStorage.setItem("isAuthenticated", "true");
         setTimeout(() => navigate("/admin"), 1500);
-      } else {
-        // Regular user login
-        toast.success("Login successful!");
-        localStorage.setItem('userRole', 'user');
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('isAuthenticated', 'true');
-        setTimeout(() => navigate("/chat"), 1500);
+        return;
       }
+
+      // ✅ Firebase login for normal users
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      toast.success("Login successful!");
+      localStorage.setItem("userRole", "user");
+      localStorage.setItem("userEmail", user.email);
+      localStorage.setItem("isAuthenticated", "true");
+
+      setTimeout(() => navigate("/chat"), 1500);
+
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      console.error(error.message);
+      toast.error("Invalid email or password.");
     }
   };
 
@@ -43,7 +54,7 @@ const Login = () => {
       <ToastContainer position="top-right" toastStyle={{ marginTop: "70px" }} />
       <div className="form-section">
         <h2>Login to AskSamriddhi</h2>
-        
+
         <input
           type="email"
           placeholder="Email Address"
@@ -58,18 +69,13 @@ const Login = () => {
           onChange={(e) => setPassword(e.target.value)}
           className="login-input"
         />
-        
-        <button onClick={handleSubmit}>
-          Continue
-        </button>
+
+        <button onClick={handleSubmit}>Continue</button>
 
         <div className="access-options">
           <div className="guest-access">
             <p>or</p>
-            <button 
-              className="guest-btn"
-              onClick={() => navigate("/chat")}
-            >
+            <button className="guest-btn" onClick={() => navigate("/chat")}>
               Continue as Guest
             </button>
           </div>
@@ -79,4 +85,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default LoginSignup;

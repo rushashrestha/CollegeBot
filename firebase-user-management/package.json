@@ -1,0 +1,16 @@
+{
+  "name": "firebase-user-management",
+  "version": "1.0.0",
+  "description": "",
+  "main": "createSamriddhiUsers.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase-admin": "^13.5.0",
+    "xlsx": "^0.18.5"
+  }
+}
