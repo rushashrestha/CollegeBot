@@ -1,45 +1,45 @@
 import os
 import pandas as pd
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.schema import Document
 
 # ==============================
-# PDF Processing
+# Markdown Processing
 # ==============================
-def process_pdf(pdf_path, persist_dir):
-    # Load PDF
-    loader = PyPDFLoader(pdf_path)
-    documents = loader.load()
-
-    # Text splitting
+def process_md_files(md_dir, persist_dir):
+    docs = []
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
         chunk_overlap=100,
-        separators=["\n\n", "\n", "====", "•", "|", "Course Code"]
+        separators=["\n\n", "\n", "====", "•", "|"]
     )
 
-    texts = text_splitter.split_documents(documents)
+    for file in os.listdir(md_dir):
+        if file.endswith(".md"):
+            loader = TextLoader(os.path.join(md_dir, file), encoding="utf-8")
+            documents = loader.load()
+            splits = text_splitter.split_documents(documents)
+            docs.extend(splits)
 
-    # Add page numbers metadata
-    for i, text in enumerate(texts):
-        text.metadata['page'] = text.metadata.get('page', i // 3 + 1)
+    if not docs:
+        print("⚠️ No Markdown files found.")
+        return None
 
-    # Create vector DB
     embedding = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
     vectordb = Chroma.from_documents(
-        texts,
+        docs,
         embedding,
         persist_directory=persist_dir,
         collection_metadata={"hnsw:space": "cosine"}
     )
     vectordb.persist()
-    print(f"✅ PDF data stored in {persist_dir}")
+    print(f"✅ Markdown data stored in {persist_dir}")
     return vectordb
 
 
@@ -47,7 +47,6 @@ def process_pdf(pdf_path, persist_dir):
 # CSV Processing
 # ==============================
 def process_csv(csv_path, persist_dir):
-    # Read CSV
     df = pd.read_csv(csv_path)
 
     docs = []
@@ -68,7 +67,10 @@ def process_csv(csv_path, persist_dir):
             metadata={"id": row["ID"], "name": row["Name"]}
         ))
 
-    # Create vector DB
+    if not docs:
+        print("⚠️ No student records found.")
+        return None
+
     embedding = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
@@ -88,18 +90,16 @@ def process_csv(csv_path, persist_dir):
 # Run both
 # ==============================
 if __name__ == "__main__":
-    # Paths
-    pdf_path = "data/scraped_pdfs/full_csit_program.pdf"
-    pdf_db_dir = "db/pdf"
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    csv_path = "data/csv/StudentDetails.csv"
-    student_db_dir = "db/student"
+    md_dir = os.path.join(BASE_DIR, "data")  # where BBS.md, bca.md, etc. are
+    md_db_dir = os.path.join(BASE_DIR, "db/md")
+
+    csv_path = os.path.join(BASE_DIR, "data", "csv", "StudentDetails.csv")
+    student_db_dir = os.path.join(BASE_DIR, "db/student")
 
     # Create vector DBs
-    if os.path.exists(pdf_path):
-        process_pdf(pdf_path, pdf_db_dir)
-    else:
-        print("⚠️ PDF file not found, skipping PDF processing.")
+    process_md_files(md_dir, md_db_dir)
 
     if os.path.exists(csv_path):
         process_csv(csv_path, student_db_dir)
