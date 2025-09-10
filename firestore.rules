@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to get user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Helper function to check if user is teacher
+    function isTeacher() {
+      return isAuthenticated() && getUserRole() == 'teacher';
+    }
+    
+    // Helper function to check if user is student
+    function isStudent() {
+      return isAuthenticated() && getUserRole() == 'student';
+    }
+    
+    // Users collection - basic user info
+    match /users/{userId} {
+      // Users can read/update their own profile
+      allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Teachers can read all user profiles
+      allow read: if isTeacher();
+      
+      // Only system can create users (handled by admin SDK)
+      allow create: if false;
+      
+      // Only system can delete users
+      allow delete: if false;
+    }
+    
+    // Students collection - detailed student information
+    match /students/{studentId} {
+      // Students can only read their own data
+      allow read: if isAuthenticated() && request.auth.uid == studentId;
+      
+      // Teachers can read all student data
+      allow read: if isTeacher();
+      
+      // Teachers can update student data
+      allow update: if isTeacher();
+      
+      // Only system can create/delete student records
+      allow create, delete: if false;
+    }
+    
+    // Teachers collection - detailed teacher information  
+    match /teachers/{teacherId} {
+      // Teachers can read their own data
+      allow read: if isAuthenticated() && request.auth.uid == teacherId;
+      
+      // Teachers can read other teachers' data
+      allow read: if isTeacher();
+      
+      // Teachers can update their own data
+      allow update: if isAuthenticated() && request.auth.uid == teacherId;
+      
+      // Only system can create/delete teacher records
+      allow create, delete: if false;
+    }
+    
+    // Chat messages collection (for your chatbot)
+    match /chatMessages/{messageId} {
+      // Users can read their own chat messages
+      allow read, write: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Teachers can read all chat messages
+      allow read: if isTeacher();
+      
+      // Allow creating new messages for authenticated users
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Chat sessions collection
+    match /chatSessions/{sessionId} {
+      // Users can manage their own chat sessions
+      allow read, write: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Teachers can read all chat sessions
+      allow read: if isTeacher();
+      
+      // Allow creating new sessions for authenticated users
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Academic records (if you want to store grades, attendance, etc.)
+    match /academicRecords/{recordId} {
+      // Students can only read their own academic records
+      allow read: if isStudent() && resource.data.studentId == request.auth.uid;
+      
+      // Teachers can read and modify all academic records
+      allow read, write: if isTeacher();
+      
+      // Allow teachers to create new academic records
+      allow create: if isTeacher();
+    }
+    
+    // System logs (for audit trail)
+    match /systemLogs/{logId} {
+      // Only teachers can read system logs
+      allow read: if isTeacher();
+      
+      // Only system can write logs
+      allow write: if false;
+    }
+  }
+}

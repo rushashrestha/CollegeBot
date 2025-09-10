@@ -1,36 +1,44 @@
-// Login.jsx
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import "react-toastify/dist/ReactToastify.css";
 import "./LoginSignup.css";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+// ✅ Schema for validation
+const loginSchema = z.object({
+  email: z.email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
+const Login = () => {
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
-    if (!email || !password) {
-      toast.warning("Please fill in all fields.");
-      return;
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = (data) => {
+    const { email, password } = data;
 
     try {
-      // Check for admin credentials
-      if (email === 'admin@samriddhi.edu.np' && password === 'admin123') {
+      if (email === "admin@samriddhi.edu.np" && password === "admin123") {
         toast.success("Admin login successful!");
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('adminEmail', email);
-        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem("userRole", "admin");
+        localStorage.setItem("adminEmail", email);
+        localStorage.setItem("isAuthenticated", "true");
         setTimeout(() => navigate("/admin"), 1500);
       } else {
-        // Regular user login
         toast.success("Login successful!");
-        localStorage.setItem('userRole', 'user');
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem("userRole", "user");
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("isAuthenticated", "true");
         setTimeout(() => navigate("/chat"), 1500);
       }
     } catch (error) {
@@ -40,33 +48,42 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <ToastContainer position="top-right" toastStyle={{ marginTop: "70px" }} />
+      <ToastContainer  toastStyle={{ marginTop: "70px" }} />
       <div className="form-section">
         <h2>Login to AskSamriddhi</h2>
-        
-        <input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="login-input"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="login-input"
-        />
-        
-        <button onClick={handleSubmit}>
-          Continue
-        </button>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="login-form">
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Email Address"
+              {...register("email")}
+              className="login-input"
+            />
+            {errors.email && (
+              <p className="error-text">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="Password"
+              {...register("password")}
+              className="login-input"
+            />
+            {errors.password && (
+              <p className="error-text">{errors.password.message}</p>
+            )}
+          </div>
+
+          <button type="submit" className="login-btn">Continue</button>
+        </form>
 
         <div className="access-options">
           <div className="guest-access">
             <p>or</p>
-            <button 
+            <button
               className="guest-btn"
               onClick={() => navigate("/chat")}
             >
