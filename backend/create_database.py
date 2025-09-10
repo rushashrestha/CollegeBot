@@ -95,7 +95,7 @@ if __name__ == "__main__":
     md_dir = os.path.join(BASE_DIR, "data")  # where BBS.md, bca.md, etc. are
     md_db_dir = os.path.join(BASE_DIR, "db/md")
 
-    csv_path = os.path.join(BASE_DIR, "data", "csv", "StudentDetails.csv")
+    csv_path = os.path.join(BASE_DIR, "data", "csv", "StudentsDetails.csv")
     student_db_dir = os.path.join(BASE_DIR, "db/student")
 
     # Create vector DBs
