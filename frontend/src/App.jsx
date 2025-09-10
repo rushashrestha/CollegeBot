@@ -4,6 +4,7 @@ import LoginSignup from './Components/LoginSignup/LoginSignup';
 import ChatBot from './Components/ChatBot/ChatBot';
 import AdminDashboard from './Components/AdminDashboard/AdminDashboard';
 import AdminRoute from './utils/AdminRoute';
+import ChangePassword from "./Components/ChangePassword/ChangePassword";
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
           
           {/* Chat route - accessible to all authenticated users and guests */}
           <Route path="/chat" element={<ChatBot />} />
+
+          <Route path="/change-password" element={<ChangePassword />} />
           
           {/* Admin route - protected, only for admin users */}
           <Route 
