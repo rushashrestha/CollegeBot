@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import pandas as pd
 from langchain_community.document_loaders import TextLoader
@@ -105,3 +106,36 @@ if __name__ == "__main__":
         process_csv(csv_path, student_db_dir)
     else:
         print("⚠️ CSV file not found, skipping Student DB processing.")
+=======
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+
+# Enhanced PDF processing
+loader = PyPDFLoader("data/scraped_pdfs/full_csit_program.pdf")
+documents = loader.load()
+
+# Improved text splitting
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=100,
+    separators=["\n\n", "\n", "====", "•", "|", "Course Code"]
+)
+
+texts = text_splitter.split_documents(documents)
+
+# Add page numbers to metadata
+for i, text in enumerate(texts):
+    text.metadata['page'] = text.metadata.get('page', i//3 + 1)  # Group every 3 chunks
+
+embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+# Create vectorstore with enhanced metadata
+vectordb = Chroma.from_documents(
+    texts, 
+    embedding, 
+    persist_directory="db",
+    collection_metadata={"hnsw:space": "cosine"}  # Better similarity metric
+)
+>>>>>>> origin
