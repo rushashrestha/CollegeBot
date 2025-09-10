@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 import pandas as pd
@@ -108,9 +108,9 @@ class CSITQuerySystem:
 
             context = "\n".join([doc.page_content for doc in docs])
             llm = ChatGroq(
-                temperature=0.2,
+                temperature=0.1,
                 groq_api_key=os.getenv("GROQ_API_KEY"),
-                model_name="llama3-70b-8192"
+                model_name="llama-3.3-70b-versatile"
             )
 
             response = llm.invoke(f"""Answer using ONLY this {db_type} context:
