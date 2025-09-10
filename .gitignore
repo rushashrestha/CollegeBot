@@ -26,5 +26,3 @@ data/scraped_pdfs/vector_db/
 
 # ignore the node modules of the frontend folder 
 frontend/node_modules
-
-firebase-user-management/serviceAccountKey.json

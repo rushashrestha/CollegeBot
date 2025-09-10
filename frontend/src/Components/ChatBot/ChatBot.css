@@ -1,9 +1,8 @@
 /* App Container */
-.app-container {
-  min-height: 100vh;
-  display: flex;
-  transition: all 0.3s ease;
-  position: relative;
+.main-content{
+    width: 100%;      /* Occupies full width of the parent */
+  max-width: 100vw;
+  
 }
 
 .app-container.light {
@@ -713,6 +712,21 @@
 
 /* Responsive Styles */
 @media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;   /* remove sidebar gap */
+    width: 100%;                 /* take full width */
+    height: 100vh;               /* take full viewport height */
+    overflow: hidden;            /* prevent unwanted scrolling */
+  }
+   .messages {
+    max-height: calc(100vh - 120px); /* adjust so messages fit with input + header */
+    padding: 0.75rem;                /* smaller padding on mobile */
+  }
+   .chat-container {
+    width: 100%;
+    height: 100%;                /* fill parent */
+    padding: 0;                  /* remove side paddings */
+  }
   .sidebar {
     width: 100%;
     max-width: 320px;

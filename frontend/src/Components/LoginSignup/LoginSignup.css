@@ -1,4 +1,4 @@
-/* Login.css */
+/* Container */
 .login-container {
   display: flex;
   justify-content: center;
@@ -10,20 +10,30 @@
   box-sizing: border-box;
 }
 
+/* Error message */
+.error-text {
+  color: red;
+  font-size: 0.85rem;
+  margin: 6px 0 0;
+  word-break: break-word; /* prevents overflow */
+}
+
+/* Login box */
 .form-section {
   width: 100%;
   max-width: 450px;
-  padding: 60px 50px;
+  padding: 50px 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 22px;
+  gap: 24px;
   background-color: #ffffff;
   border-radius: 18px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   animation: fadeInUp 0.6s ease forwards;
 }
 
+/* Title */
 .form-section h2 {
   color: #9e76e3;
   text-align: center;
@@ -33,7 +43,24 @@
   letter-spacing: 0.5px;
 }
 
+/* Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Input wrapper */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Inputs */
 .login-input {
+  width: 100%;
   padding: 14px 16px;
   border: 1px solid #ccc;
   border-radius: 10px;
@@ -42,7 +69,8 @@
   outline: none;
   background-color: white;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-  color: #333; /* Ensure text is visible */
+  color: #333;
+  box-sizing: border-box; /* ensures padding doesn’t overflow */
 }
 
 .login-input:focus {
@@ -50,7 +78,9 @@
   box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
 }
 
-.form-section button {
+/* Submit button */
+.login-btn {
+  width: 100%;
   padding: 14px;
   background-color: #9e76e3;
   color: white;
@@ -62,16 +92,14 @@
   transition: background 0.3s ease, transform 0.2s ease;
 }
 
-.form-section button:hover {
+.login-btn:hover {
   background-color: #b7b4f1;
   transform: translateY(-1px);
 }
 
-.form-section p {
-  text-align: center;
-  font-size: 14px;
-  color: #555;
-  margin: 0;
+/* Guest access */
+.access-options {
+  margin-top: 20px;
 }
 
 .guest-access {
@@ -94,6 +122,8 @@
   border: 2px solid #9e76e3 !important;
   padding: 12px 24px !important;
   font-size: 14px !important;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
 .guest-btn:hover {
@@ -102,10 +132,7 @@
   transform: translateY(-1px);
 }
 
-.access-options {
-  margin-top: 20px;
-}
-
+/* Animation */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -117,19 +144,27 @@
   }
 }
 
-/* Responsive Styles */
+/* Responsive */
 @media (max-width: 768px) {
   .form-section {
     padding: 40px 30px;
-    gap: 20px;
     max-width: 400px;
+  }
+
+  .login-input {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .login-btn {
+    font-size: 15px;
+    padding: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .form-section {
     padding: 30px 20px;
-    gap: 16px;
     max-width: 350px;
   }
 
@@ -137,10 +172,14 @@
     font-size: 22px;
   }
 
-  .login-input,
-  .form-section button {
+  .login-input {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .login-btn {
     font-size: 14px;
-    padding: 12px;
+    padding: 10px;
   }
 
   .form-section p {
