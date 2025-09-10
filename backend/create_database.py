@@ -75,6 +75,7 @@ def process_csv(csv_path, persist_dir):
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
+
     vectordb = Chroma.from_documents(
         docs,
         embedding,
