@@ -3,415 +3,170 @@ from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+import pandas as pd
 
 load_dotenv()
 
-class CollegeQuerySystem:
+class CSITQuerySystem:
     def __init__(self):
+        # ========================
+        # Embedding model
+        # ========================
         self.embedding = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
             model_kwargs={'device': 'cpu'},
             encode_kwargs={'normalize_embeddings': True}
         )
-        self.vectordb_path = "db"
-        
-        # Program information
-        self.programs = {
+
+        # Paths
+        self.md_db_path = "db/md"           # Markdown/PDF data
+        self.student_db_path = "db/student" # Student CSV data
+
+        # Verified institutional knowledge
+        self.college_programs = {
             "csit": {
-                "name": "Bachelor of Science in Computer Science and IT",
+                "offered": True,
+                "title": "Bachelor of Science in Computer Science and IT",
                 "duration": "4 years (8 semesters)",
-                "seats": 48,
-                "keywords": ["csit", "computer science", "bsc csit", "bsc computer science"]
+                "affiliation": "Tribhuvan University",
+                "intake": 48,
+                "website": "https://samriddhicollege.edu.np/bsc-csit",
+                "keywords": ["csit", "computer science", "bsc csit"]
             },
             "bca": {
-                "name": "Bachelor of Computer Applications",
-                "duration": "4 years (8 semesters)",
-                "seats": 38,
+                "offered": True,
+                "title": "Bachelor of Computer Applications",
+                "duration": "4 years",
+                "affiliation": "Tribhuvan University",
+                "intake": 60,
+                "website": "https://samriddhicollege.edu.np/bca",
                 "keywords": ["bca", "computer applications"]
-            },
-            "bsw": {
-                "name": "Bachelor of Social Work",
-                "duration": "4 years",
-                "seats": 60,
-                "keywords": ["bsw", "social work"]
-            },
-            "bbs": {
-                "name": "Bachelor of Business Studies",
-                "duration": "4 years",
-                "seats": 60,
-                "keywords": ["bbs", "business studies"]
             }
         }
 
-    def get_vectordb(self):
-        """Load the vector database"""
-        return Chroma(
-            persist_directory=self.vectordb_path,
-            embedding_function=self.embedding
-        )
-
-    def detect_program(self, question):
-        """Identify which program the question is about"""
-        question_lower = question.lower()
-        for program, data in self.programs.items():
-            if any(kw in question_lower for kw in data["keywords"]):
-                return program, data
-        return None, None
-
-    def _should_preserve_table_format(self, question):
-        """Check if question requires table data to be preserved"""
-        table_keywords = [
-            'marks', 'credits', 'full marks', 'total marks', 'credit hours',
-            'marks for', 'credits for', 'how many credits', 'how many marks',
-            'table', 'outline', 'structure', 'complete list', 'all courses'
-        ]
-        return any(keyword in question.lower() for keyword in table_keywords)
-
-    def _enhanced_table_formatting(self, text):
-        """Enhanced table formatting that preserves all information"""
-        lines = []
-        for line in text.split('\n'):
-            if '|' in line:
-                parts = [p.strip() for p in line.split('|') if p.strip()]
-                if len(parts) >= 3 and not any(h in line.lower() for h in ['header', '---', 'course code']):
-                    # Build comprehensive course information
-                    course_info = f"• {parts[2]}"  # Course name
-                    if len(parts) > 1 and parts[1]:
-                        course_info += f" (Code: {parts[1]}"
-                    if len(parts) > 3 and parts[3]:
-                        course_info += f", Credits: {parts[3]}"
-                    if len(parts) > 4 and parts[4]:
-                        course_info += f", Full Marks: {parts[4]}"
-                    if len(parts) > 1:
-                        course_info += ")"
-                    lines.append(course_info)
-                else:
-                    # Keep headers and other important lines
-                    lines.append(line)
-            else:
-                lines.append(line)
-        return '\n'.join(lines)
-
-    def query_documents(self, question, program=None, k=15):
-        """Enhanced document querying with intelligent formatting"""
-        vectordb = self.get_vectordb()
-        raw_context = ""
-        
-        # Strategy 1: Direct search with program filter
-        if program:
-            try:
-                docs = vectordb.similarity_search(
-                    question,
-                    k=k,
-                    filter={"program": program}
-                )
-                if docs:
-                    raw_context = "\n\n".join([doc.page_content for doc in docs])
-            except:
-                pass
-        
-        # Strategy 2: Broad search without filter if no results
-        if not raw_context:
-            docs = vectordb.similarity_search(question, k=k)
-            if docs:
-                raw_context = "\n\n".join([doc.page_content for doc in docs])
-        
-        # Strategy 3: Keyword-based search for general college info
-        if not raw_context:
-            general_terms = ["samriddhi", "college", "principal", "director", "chairman"]
-            for term in general_terms:
-                if term in question.lower():
-                    docs = vectordb.similarity_search(term, k=k)
-                    if docs:
-                        raw_context = "\n\n".join([doc.page_content for doc in docs])
-                        break
-        
-        # Intelligent formatting based on question type
-        if raw_context:
-            if self._should_preserve_table_format(question):
-                # For marks, credits, and detailed queries - preserve more information
-                return self._enhanced_table_formatting(raw_context)
-            else:
-                # For general queries - simplified formatting
-                return self._enhanced_table_formatting(raw_context)
-        
-        return ""
-
-    def _extract_detailed_courses(self, context, semester):
-        """Extract courses with all details including marks and credits"""
-        courses = []
-        current_semester = False
-        
-        for line in context.split('\n'):
-            semester_patterns = [
-                f"Semester {semester}",
-                f"| Semester {semester}",
-                f"## Semester {semester}",
-                f"# Semester {semester}"
-            ]
-            
-            if any(pattern in line for pattern in semester_patterns):
-                current_semester = True
-                continue
-            elif any(f"Semester {i}" in line for i in range(1, 9) if i != int(semester)) and current_semester:
-                break
-                
-            if current_semester and '|' in line and 'Course Code' not in line and line.strip():
-                parts = [p.strip() for p in line.split('|') if p.strip()]
-                if len(parts) >= 3 and parts[2] and parts[2] != "---":
-                    course_code = parts[1] if len(parts) > 1 else ""
-                    course_name = parts[2] if len(parts) > 2 else ""
-                    credits = parts[3] if len(parts) > 3 else ""
-                    full_marks = parts[4] if len(parts) > 4 else ""
-                    
-                    course_info = f"• {course_name}"
-                    if course_code:
-                        course_info += f" (Code: {course_code}"
-                    if credits:
-                        course_info += f", Credits: {credits}"
-                    if full_marks:
-                        course_info += f", Full Marks: {full_marks}"
-                    if course_code:
-                        course_info += ")"
-                    
-                    courses.append(course_info)
-        
-        return courses
-    
-    def _handle_course_listing(self, question, program_data):
-        """Enhanced course listing handler with complete information"""
-        # Get comprehensive context without cleaning
-        vectordb = self.get_vectordb()
-        docs = vectordb.similarity_search(
-            f"courses curriculum syllabus {program_data['name']} semester",
-            k=20,
-            filter={"program": program_data['keywords'][0]} if program_data else None
-        )
-        
-        raw_context = "\n\n".join([doc.page_content for doc in docs]) if docs else ""
-        
-        # Extract semester number
-        semester = "1"  # default
-        words = question.split()
-        for word in words:
-            if word.isdigit() and 1 <= int(word) <= 8:
-                semester = word
-                break
-            elif word.lower() in ["first", "1st"]:
-                semester = "1"
-            elif word.lower() in ["second", "2nd"]:
-                semester = "2"
-            elif word.lower() in ["third", "3rd"]:
-                semester = "3"
-            elif word.lower() in ["fourth", "4th", "forth"]:
-                semester = "4"
-            elif word.lower() in ["fifth", "5th"]:
-                semester = "5"
-            elif word.lower() in ["sixth", "6th"]:
-                semester = "6"
-            elif word.lower() in ["seventh", "7th"]:
-                semester = "7"
-            elif word.lower() in ["eighth", "8th"]:
-                semester = "8"
-        
-        # Try direct extraction first
-        courses = self._extract_detailed_courses(raw_context, semester)
-        
-        if courses:
-            return (
-                f"{program_data['name']} Semester {semester} Courses:\n\n" +
-                '\n'.join(courses) +
-                f"\n\n(Source: {program_data['keywords'][0].upper()} curriculum document)"
+    # ========================
+    # Load Markdown / PDF Vector DB
+    # ========================
+    def get_md_vectordb(self):
+        try:
+            if not os.path.exists(self.md_db_path):
+                return None
+            return Chroma(
+                persist_directory=self.md_db_path,
+                embedding_function=self.embedding
             )
-        
-        # Fallback to LLM with enhanced prompt
-        prompt = ChatPromptTemplate.from_template("""
-        You are a helpful assistant that extracts course information from college documents.
+        except Exception as e:
+            print(f"Error loading Markdown/PDF DB: {e}")
+            return None
 
-        Context from college documents:
-        {context}
+    # ========================
+    # Load Student CSV Vector DB
+    # ========================
+    def get_student_db(self):
+        try:
+            if not os.path.exists(self.student_db_path) or not os.path.exists(os.path.join(self.student_db_path, "chroma.sqlite3")):
+                return None
+            return Chroma(
+                persist_directory=self.student_db_path,
+                embedding_function=self.embedding
+            )
+        except Exception as e:
+            print(f"Error loading student DB: {e}")
+            return None
 
-        Question: {question}
+    # ========================
+    # College program Qs
+    # ========================
+    def _answer_college_query(self, prompt):
+        prompt_lower = prompt.lower()
+        if any(q in prompt_lower for q in ["does samriddhi", "offer", "have", "provide"]):
+            for program, details in self.college_programs.items():
+                if any(kw in prompt_lower for kw in details["keywords"]):
+                    if details["offered"]:
+                        return (f"Yes, Samriddhi College offers {details['title']} ({details['duration']}) "
+                                f"affiliated with {details['affiliation']}. Intake: {details['intake']} students. "
+                                f"More info: {details['website']}")
+                    return f"No, Samriddhi College does not currently offer {program.upper()}."
 
-        Instructions:
-        1. Extract course information from any tables or text for Semester {semester}
-        2. Present the information in a clear, bullet-point list format
-        3. Include course names, codes, credit hours, and full marks when available
-        4. Be comprehensive and include ALL courses for the requested semester
-        5. If you see table data with | symbols, extract all the information from each column
-        6. Format as: • Course Name (Code: XXX, Credits: X, Full Marks: XXX)
+        if "what programs" in prompt_lower or "which courses" in prompt_lower:
+            offered = [details['title'] for details in self.college_programs.values() if details['offered']]
+            return "Samriddhi College offers:\n- " + "\n- ".join(offered)
 
-        Provide the complete course information:
-        """)
-        
-        chain = prompt | ChatGroq(
-            temperature=0.1,
-            model_name="llama-3.3-70b-versatile",
-            groq_api_key=os.getenv("GROQ_API_KEY")
-        ) | StrOutputParser()
-        
-        response = chain.invoke({
-            "program": program_data['name'],
-            "semester": semester,
-            "context": raw_context,
-            "question": question
-        })
-        
-        return response + f"\n\n(Source: {program_data['keywords'][0].upper()} document)"
+        return None
 
-    def _handle_specific_queries(self, question, program, program_data):
-        """Handle specific queries about marks, credits, etc."""
-        
-        # Get raw context without formatting
-        vectordb = self.get_vectordb()
-        docs = vectordb.similarity_search(question, k=20)
-        raw_context = "\n\n".join([doc.page_content for doc in docs]) if docs else ""
-        
-        # Enhanced prompt for specific information extraction
-        prompt = ChatPromptTemplate.from_template("""
-        You are a helpful assistant providing specific information from college documents.
-        
-        Context from college documents:
-        {context}
-        
-        Question: {question}
-        
-        Instructions:
-        1. Look for the exact information requested in the question
-        2. If you find table data with | symbols, extract the specific values requested
-        3. Be precise and specific in your answer
-        4. Include relevant details like course codes, semester information, etc.
-        5. If the question is about marks or credits, provide the exact numerical values
-        6. If you cannot find the specific information, say so clearly
-        
-        Provide a direct, specific answer:
-        """)
-        
-        chain = prompt | ChatGroq(
-            temperature=0.1,
-            model_name="llama-3.3-70b-versatile",
-            groq_api_key=os.getenv("GROQ_API_KEY")
-        ) | StrOutputParser()
-        
-        response = chain.invoke({
-            "question": question,
-            "context": raw_context
-        })
-        
-        source = f"{program.upper()} document" if program else "Samriddhi College documents"
-        return f"{response}\n\n(Source: {source})"
+    # ========================
+    # Query a Vector DB
+    # ========================
+    def _query_vectordb(self, vectordb, prompt, db_type="PDF/Markdown"):
+        try:
+            if not vectordb:
+                return None
 
-    def generate_response(self, question):
-        """Enhanced response generation with better context handling"""
-        program, program_data = self.detect_program(question)
-        
-        # Handle semester count questions
-        if "how many semesters" in question.lower() and program_data:
-            return f"{program_data['name']} has {program_data['duration']}.\n\n(Source: {program.upper()} program information)"
-        
-        # Handle specific marks/credits queries
-        specific_keywords = ["full marks", "marks for", "credits for", "how many credits", "how many marks"]
-        if any(phrase in question.lower() for phrase in specific_keywords):
-            return self._handle_specific_queries(question, program, program_data)
-        
-        # Handle course listing questions
-        course_keywords = ["courses in semester", "list of courses", "course structure", 
-                          "subjects in", "curriculum", "syllabus", "semester courses", "courses for"]
-        if any(phrase in question.lower() for phrase in course_keywords):
-            if not program_data:
-                return "Please specify which program (e.g., BCA, CSIT, BSW, BBS) you're asking about."
-            return self._handle_course_listing(question, program_data)
-        
-        # Enhanced general query handling
-        context = self.query_documents(question, program)
-        
-        if not context or len(context.strip()) < 10:
-            # Try broader search
-            context = self.query_documents(question, None, k=20)
-        
-        if not context or len(context.strip()) < 10:
-            return "I couldn't find specific information about your question in the available documents. Could you try rephrasing your question or be more specific?"
-        
-        # Enhanced prompt for better responses
-        prompt = ChatPromptTemplate.from_template("""
-        You are a helpful assistant providing information about Samriddhi College and its programs.
-        
-        Available information:
-        {context}
-        
-        Question: {question}
-        
-        Instructions:
-        1. Provide a clear, helpful answer based on the available information
-        2. Be specific and accurate - include exact numbers, codes, and details when available
-        3. If you see table data or structured information, extract and present it clearly
-        4. Use a conversational but professional tone
-        5. Include all relevant details that answer the question
-        6. If the information partially answers the question, provide what you can
-        7. Focus on being comprehensive and helpful
-        8. AVOID ASCII tables, pipe symbols, or messy formatting
-        9. Use clean bullet points or simple formatted text
-        10. Make the response easy to read and visually appealing
-        
-        Answer the question based on the provided context:
-        """)
-        
-        chain = prompt | ChatGroq(
-            temperature=0.2,
-            model_name="llama-3.3-70b-versatile",
-            groq_api_key=os.getenv("GROQ_API_KEY")
-        ) | StrOutputParser()
-        
-        response = chain.invoke({
-            "question": question,
-            "context": context
-        })
-        
-        # Add source attribution
-        source = f"{program.upper()} document" if program else "Samriddhi College documents"
-        return f"{response}\n\n(Source: {source})"
+            docs = vectordb.similarity_search(prompt, k=5)
+            if not docs:
+                return None
 
+            context = "\n".join([doc.page_content for doc in docs])
+            llm = ChatGroq(
+                temperature=0.1,
+                groq_api_key=os.getenv("GROQ_API_KEY"),
+                model_name="llama-3.3-70b-versatile"
+            )
+
+            response = llm.invoke(f"""Answer using ONLY this {db_type} context:
+{context}
+Question: {prompt}
+If the answer isn't here, respond: "This information is not in the {db_type} database".""")
+            return response.content
+        except Exception as e:
+            return f"Error querying {db_type} database: {str(e)}"
+
+    # ========================
+    # Main router for user queries
+    # ========================
+    def get_response(self, prompt):
+        # 1. Institutional questions
+        college_response = self._answer_college_query(prompt)
+        if college_response:
+            return college_response
+
+        # 2. Student CSV
+        student_db = self.get_student_db()
+        student_response = self._query_vectordb(student_db, prompt, db_type="student")
+        if student_response and "not in the student database" not in student_response.lower():
+            return student_response
+
+        # 3. Markdown / PDF
+        md_db = self.get_md_vectordb()
+        md_response = self._query_vectordb(md_db, prompt, db_type="PDF/Markdown")
+        if md_response:
+            return md_response
+
+        return "Sorry, I could not find an answer to your question."
+
+# ========================
+# Interactive chat
+# ========================
 def interactive_chat():
-    print("\n" + "="*60)
-    print("SAMRIDDHI COLLEGE INFORMATION SYSTEM")
-    print("="*60)
-    print("Available Programs: BCA, CSIT (BSc CSIT), BSW, BBS")
-    print("You can ask about:")
-    print("- College information (principal, directors, facilities)")
-    print("- Program details (duration, eligibility, career prospects)")
-    print("- Course structure and semester-wise subjects")
-    print("- Admission requirements and procedures")
-    print("- Specific course details (marks, credits, codes)")
-    print("\nType 'exit' or 'quit' to end the session")
-    print("="*60)
-    
-    system = CollegeQuerySystem()
-    
+    print("\nSamriddhi College Academic Query System")
+    print("Type 'exit' to quit\n")
+
+    system = CSITQuerySystem()
+
     while True:
         try:
-            question = input("\n💬 Your question: ").strip()
-            
-            if not question:
-                print("Please enter a question.")
-                continue
-                
-            if question.lower() in ['exit', 'quit', 'bye']:
-                print("\nThank you for using Samriddhi College Information System! 👋")
+            prompt = input("Your question: ").strip()
+            if prompt.lower() in ['exit', 'quit']:
                 break
-                
-            print("\n🔍 Searching for information...")
-            response = system.generate_response(question)
-            print(f"\n📋 Answer:\n{response}")
-            print("\n" + "-"*60)
-            
+
+            response = system.get_response(prompt)
+            print(f"\n{response}\n")
         except KeyboardInterrupt:
-            print("\n\nSession ended by user. Goodbye! 👋")
+            print("\nExiting...")
             break
         except Exception as e:
-            print(f"\n❌ Error: {str(e)}")
-            print("Please try asking your question differently.")
+            print(f"\nError: {str(e)}\n")
+
 
 if __name__ == "__main__":
     interactive_chat()
