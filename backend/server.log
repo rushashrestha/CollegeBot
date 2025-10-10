@@ -488,3 +488,27 @@
 2025-09-08 13:15:12,930 - INFO -  * Restarting with stat
 2025-09-08 13:15:14,627 - WARNING -  * Debugger is active!
 2025-09-08 13:15:14,629 - INFO -  * Debugger PIN: 291-924-765
+2025-10-10 10:22:43,180 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-10-10 10:22:43,180 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-10 10:22:43,182 - INFO -  * Restarting with stat
+2025-10-10 10:22:44,899 - WARNING -  * Debugger is active!
+2025-10-10 10:22:44,903 - INFO -  * Debugger PIN: 142-618-534
+2025-10-10 10:23:39,152 - INFO - 127.0.0.1 - - [10/Oct/2025 10:23:39] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-10 10:23:53,742 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-10 10:23:59,783 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2025-10-10 10:24:02,367 - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-10-10 10:24:02,397 - INFO - 127.0.0.1 - - [10/Oct/2025 10:24:02] "POST /api/query HTTP/1.1" 200 -
+2025-10-10 10:24:30,414 - INFO - 127.0.0.1 - - [10/Oct/2025 10:24:30] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-10 10:24:30,666 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-10 10:24:36,398 - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-10-10 10:24:36,400 - INFO - 127.0.0.1 - - [10/Oct/2025 10:24:36] "POST /api/query HTTP/1.1" 200 -
+2025-10-10 10:38:52,151 - INFO - 127.0.0.1 - - [10/Oct/2025 10:38:52] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-10 10:38:52,311 - INFO - 127.0.0.1 - - [10/Oct/2025 10:38:52] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-10 10:38:52,481 - INFO - 127.0.0.1 - - [10/Oct/2025 10:38:52] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-10 10:38:52,621 - INFO - 127.0.0.1 - - [10/Oct/2025 10:38:52] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-10 10:38:56,615 - INFO - 127.0.0.1 - - [10/Oct/2025 10:38:56] "GET /admin/queries HTTP/1.1" 200 -
+2025-10-10 10:39:02,012 - INFO - 127.0.0.1 - - [10/Oct/2025 10:39:02] "GET /admin/students HTTP/1.1" 200 -
+2025-10-10 10:39:02,016 - INFO - 127.0.0.1 - - [10/Oct/2025 10:39:02] "GET /admin/teachers HTTP/1.1" 200 -
+2025-10-10 10:39:03,056 - INFO - 127.0.0.1 - - [10/Oct/2025 10:39:03] "GET /admin/documents HTTP/1.1" 200 -
+2025-10-10 10:39:37,882 - INFO - 127.0.0.1 - - [10/Oct/2025 10:39:37] "GET /admin/queries HTTP/1.1" 200 -
