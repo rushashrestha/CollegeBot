@@ -4,6 +4,7 @@ venv/
 # Ignore Python cache files
 __pycache__/
 *.py[cod]
+*.log
 
 # Ignore environment variable files
 .env
@@ -15,6 +16,21 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Ignore local database or compiled data folder
 /db/
 
-/node_modules
+# Ignore Node modules (if using any JS or frontend)
+node_modules/
+
+# Ignore imported data files
+backend/import_academic_data.py
+backend/import_users.py
+
+# Ignore Excel data files
+*.xlsx
+
+# Ignore temporary test files
+backend/test_network.py
+
+# Ignore server log file
+backend/server.log
