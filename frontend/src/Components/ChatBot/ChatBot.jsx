@@ -1,5 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  getCurrentUser, 
+  logoutUser, 
+  getCurrentUserWithRole,
+  createChatSession,
+  saveChatMessage,
+  getUserChatSessions,
+  getChatMessages,
+  updateChatSessionTitle,
+  deleteChatSession
+} from '../../utils/auth';
 import Loader from "../Loader/Loader";
 import './ChatBot.css';
 
@@ -86,14 +97,15 @@ function ChatBot() {
   const [query, setQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [chatHistory, setChatHistory] = useState([
-    { id: 1, title: 'CSIT Course Information', timestamp: 'Today' },
-    { id: 2, title: 'Previous Conversation', timestamp: 'Yesterday' },
-    { id: 3, title: 'General Questions', timestamp: '2 days ago' }
-  ]);
+  const [userInfo, setUserInfo] = useState({ name: 'Guest', email: '-', role: 'guest' });
+  const [userRole, setUserRole] = useState('guest');
+  const [userData, setUserData] = useState(null);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [chatHistory, setChatHistory] = useState([]);
   const [messages, setMessages] = useState([
     { text: 'Hello! Welcome to Samriddhi ChatBot. Ask me anything.', sender: 'bot' }
   ]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Speech Recognition States
   const [isListening, setIsListening] = useState(false);
@@ -104,8 +116,54 @@ function ChatBot() {
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // Initialize Speech Recognition
+  // Initialize user info and speech recognition
   useEffect(() => {
+    const initializeUser = async () => {
+      try {
+        const userWithRole = await getCurrentUserWithRole();
+        const userRole = localStorage.getItem('userRole');
+        const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail');
+        
+        if (userWithRole || userRole) {
+          const role = userWithRole?.role || userRole || 'guest';
+          setUserRole(role);
+          setUserInfo({
+            name: role === 'admin' ? 'Admin' : (userWithRole?.email ? userWithRole.email.split('@')[0] : 'User'),
+            email: userWithRole?.email || userEmail || '-',
+            role: role
+          });
+          
+          // Fetch user data if logged in
+          if (role !== 'guest' && userWithRole?.email) {
+            await fetchUserData(userWithRole.email, role);
+          }
+
+          // Load chat history if user is authenticated
+          if (userWithRole?.id) {
+            await loadChatHistory(userWithRole.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        // Fallback to localStorage
+        const userRole = localStorage.getItem('userRole');
+        const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail');
+        if (userRole) {
+          setUserRole(userRole);
+          setUserInfo({
+            name: userRole === 'admin' ? 'Admin' : 'User',
+            email: userEmail || '-',
+            role: userRole
+          });
+        }
+      } finally {
+        setShowLoader(false);
+      }
+    };
+
+    initializeUser();
+
+    // Speech Recognition initialization
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       setSpeechSupported(true);
       
@@ -162,6 +220,101 @@ function ChatBot() {
     };
   }, []);
 
+  // Function to fetch user data
+  const fetchUserData = async (email, role) => {
+    try {
+      let tableName = '';
+      if (role === 'student') {
+        tableName = 'students_data';
+      } else if (role === 'teacher') {
+        tableName = 'teachers_data';
+      } else if (role === 'admin') {
+        tableName = 'admin_users';
+      }
+      
+      if (tableName) {
+        const response = await fetch(`http://localhost:5000/api/user-data`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, table: tableName }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUserData(data.user_data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  // Function to load chat history
+  const loadChatHistory = async (userId) => {
+    try {
+      setLoadingHistory(true);
+      const { data, error } = await getUserChatSessions(userId);
+      
+      if (error) throw error;
+      
+      if (data) {
+        const formattedSessions = data.map(session => ({
+          id: session.id,
+          title: session.title,
+          timestamp: new Date(session.updated_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          rawDate: new Date(session.updated_at)
+        }));
+        
+        setChatHistory(formattedSessions);
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  // Function to load a specific chat session
+  const loadChatSession = async (sessionId) => {
+    try {
+      const { data, error } = await getChatMessages(sessionId);
+      
+      if (error) throw error;
+      
+      if (data) {
+        const formattedMessages = data.map(msg => ({
+          text: msg.message_text,
+          sender: msg.sender,
+          timestamp: new Date(msg.created_at)
+        }));
+        
+        setMessages(formattedMessages);
+        setCurrentSessionId(sessionId);
+        setSidebarOpen(false);
+      }
+    } catch (error) {
+      console.error('Error loading chat session:', error);
+    }
+  };
+
+  // Auto-create session on first message if needed
+  useEffect(() => {
+    const initializeSession = async () => {
+      if (messages.length > 1 && !currentSessionId) {
+        await handleNewChat();
+      }
+    };
+    
+    initializeSession();
+  }, [messages.length]);
+
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -170,19 +323,6 @@ function ChatBot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowLoader(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loader if showLoader is true
-  if (showLoader) {
-    return <Loader />;
-  }
 
   // Speech Recognition Functions
   const startListening = () => {
@@ -198,47 +338,155 @@ function ChatBot() {
     }
   };
 
-  const handleSend = async () => {
-    if (query.trim()) {
-      // Stop listening if currently active
-      if (isListening) {
-        stopListening();
-      }
+const handleSend = async () => {
+  if (query.trim()) {
+    // Stop listening if currently active
+    if (isListening) {
+      stopListening();
+    }
 
-      // Add user message immediately
-      const userMessage = { text: query, sender: 'user' };
-      setMessages(prev => [...prev, userMessage]);
-      setQuery('');
-      
-      try {
-        const response = await fetch('http://localhost:5000/api/query', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query: query }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+    // Add user message immediately
+    const userMessage = { text: query, sender: 'user' };
+    setMessages(prev => [...prev, userMessage]);
+    
+    let sessionCreated = false;
+    let newSessionId = null;
+    
+    // Create new session if this is the first message
+    if (!currentSessionId) {
+      const user = await getCurrentUser();
+      if (user) {
+        try {
+          console.log('Creating session with query:', query);
+          
+          // Use auto-title generation for new sessions
+          const { data: sessionData, error } = await createChatSessionWithAutoTitle(
+            user.email,
+            userRole,
+            query, // First message used for title generation
+            user.id
+          );
+          
+          if (sessionData && !error) {
+            newSessionId = sessionData.id;
+            setCurrentSessionId(sessionData.id);
+            console.log('Auto-generated title:', sessionData.title);
+            
+            // Add to chat history
+            setChatHistory(prev => [{
+              id: sessionData.id,
+              title: sessionData.title,
+              timestamp: 'Now',
+              rawDate: new Date(sessionData.created_at)
+            }, ...prev]);
+            sessionCreated = true;
+          } else {
+            console.error('Auto-title failed, using fallback');
+            // Fallback: create session with default title
+            const { data: fallbackSession, error: fallbackError } = await createChatSession(
+              user.email,
+              userRole,
+              `Chat ${new Date().toLocaleTimeString()}`,
+              user.id
+            );
+            if (fallbackSession && !fallbackError) {
+              setCurrentSessionId(fallbackSession.id);
+              setChatHistory(prev => [{
+                id: fallbackSession.id,
+                title: fallbackSession.title,
+                timestamp: 'Now',
+                rawDate: new Date(fallbackSession.created_at)
+              }, ...prev]);
+              sessionCreated = true;
+            }
+          }
+        } catch (error) {
+          console.error('Error creating chat session:', error);
+          // Guest user or error - create local session
+          setCurrentSessionId(`local-${Date.now()}`);
         }
-        
-        const data = await response.json();
-        
-        // Add bot response
-        setMessages(prev => [...prev, { 
-          text: data.response,
-          sender: 'bot' 
-        }]);
-      } catch (error) {
-        console.error('Fetch error:', error);
-        setMessages(prev => [...prev, { 
-          text: "Sorry, I couldn't get a response from the server.", 
-          sender: 'bot' 
-        }]);
+      } else {
+        // Guest user - create local session
+        setCurrentSessionId(`guest-${Date.now()}`);
       }
     }
-  };
+    
+    // Save user message to database if we have a session (and it's not a local/guest session)
+    if (currentSessionId && !currentSessionId.startsWith('local-') && !currentSessionId.startsWith('guest-')) {
+      await saveChatMessage(currentSessionId, query, 'user');
+    }
+    
+    setQuery('');
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          query: query,
+          user_role: userRole,
+          user_data: userData 
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Backend suggested title:', data.suggested_title);
+      
+      // Add bot response
+      const botMessage = { 
+        text: data.response,
+        sender: 'bot',
+        access_restricted: data.access_restricted 
+      };
+      
+      setMessages(prev => [...prev, botMessage]);
+      
+      // Save bot message to database (if not local/guest session)
+      if (currentSessionId && !currentSessionId.startsWith('local-') && !currentSessionId.startsWith('guest-')) {
+        await saveChatMessage(currentSessionId, data.response, 'bot');
+        
+        // Only update title if backend provides a BETTER title (not generic)
+        if (sessionCreated && data.suggested_title && !isGenericTitle(data.suggested_title)) {
+          console.log('Updating to better title:', data.suggested_title);
+          await updateChatSessionTitle(currentSessionId, data.suggested_title);
+          // Update local chat history
+          setChatHistory(prev => prev.map(chat => 
+            chat.id === currentSessionId 
+              ? { ...chat, title: data.suggested_title }
+              : chat
+          ));
+        } else if (sessionCreated) {
+          console.log('Keeping auto-generated title, backend title is generic');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Fetch error:', error);
+      const errorMessage = { 
+        text: "Sorry, I couldn't get a response from the server.", 
+        sender: 'bot' 
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      
+      // Save error message to database (if not local/guest session)
+      if (currentSessionId && !currentSessionId.startsWith('local-') && !currentSessionId.startsWith('guest-')) {
+        await saveChatMessage(currentSessionId, errorMessage.text, 'bot');
+      }
+    }
+  }
+};
+
+// Add this helper function to detect generic titles
+const isGenericTitle = (title) => {
+  const genericTitles = ['chat', 'new chat', 'conversation', 'discussion', 'query'];
+  return genericTitles.includes(title.toLowerCase());
+};
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -246,20 +494,101 @@ function ChatBot() {
     }
   };
 
-  const handleLogout = () => {
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      // Clear localStorage
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('adminEmail');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('supabase_user_id');
+      
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback: clear localStorage and redirect
+      localStorage.clear();
+      navigate('/login');
+    }
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
+    const user = await getCurrentUser();
+    
+    if (user) {
+      try {
+        // Create new session in database
+        const title = `Chat ${new Date().toLocaleTimeString()}`;
+        const { data, error } = await createChatSession(
+          user.email, 
+          userRole, 
+          title, 
+          user.id
+        );
+        
+        if (error) throw error;
+        
+        if (data) {
+          setCurrentSessionId(data.id);
+          // Add to chat history
+          setChatHistory(prev => [{
+            id: data.id,
+            title: data.title,
+            timestamp: 'Now',
+            rawDate: new Date(data.created_at)
+          }, ...prev]);
+        }
+      } catch (error) {
+        console.error('Error creating new chat session:', error);
+        // Fallback: create local session without saving to DB
+        setCurrentSessionId(`local-${Date.now()}`);
+      }
+    } else {
+      // Guest user - create local session
+      setCurrentSessionId(`guest-${Date.now()}`);
+    }
+    
+    // Clear messages and close sidebar
     setMessages([
       { text: 'Hello! Welcome to Samriddhi ChatBot. Ask me anything.', sender: 'bot' }
     ]);
     setSidebarOpen(false);
+    
     // Stop any ongoing speech recognition
     if (isListening) {
       stopListening();
     }
   };
+
+  // Function to delete a chat session
+  const handleDeleteChat = async (sessionId, e) => {
+    e.stopPropagation(); // Prevent loading the chat
+    
+    try {
+      const { error } = await deleteChatSession(sessionId);
+      
+      if (error) throw error;
+      
+      // Remove from local state
+      setChatHistory(prev => prev.filter(chat => chat.id !== sessionId));
+      
+      // If current session is deleted, clear it
+      if (currentSessionId === sessionId) {
+        setCurrentSessionId(null);
+        setMessages([
+          { text: 'Hello! Welcome to Samriddhi ChatBot. Ask me anything.', sender: 'bot' }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+    }
+  };
+
+  // Show loader if showLoader is true
+  if (showLoader) {
+    return <Loader />;
+  }
 
   return (
     <div className={`app-container ${darkMode ? 'dark' : 'light'}`}>
@@ -276,12 +605,29 @@ function ChatBot() {
         
         <div className="chat-history">
           <h3>Recent Chats</h3>
-          {chatHistory.map(chat => (
-            <div key={chat.id} className="chat-history-item">
-              <div className="chat-title">{chat.title}</div>
-              <div className="chat-timestamp">{chat.timestamp}</div>
-            </div>
-          ))}
+          {loadingHistory ? (
+            <div className="loading-history">Loading...</div>
+          ) : chatHistory.length === 0 ? (
+            <div className="no-chats">No previous chats</div>
+          ) : (
+            chatHistory.map(chat => (
+              <div 
+                key={chat.id} 
+                className={`chat-history-item ${currentSessionId === chat.id ? 'active' : ''}`}
+                onClick={() => loadChatSession(chat.id)}
+              >
+                <div className="chat-title">{chat.title}</div>
+                <div className="chat-timestamp">{chat.timestamp}</div>
+                <button 
+                  className="delete-chat-btn"
+                  onClick={(e) => handleDeleteChat(chat.id, e)}
+                  title="Delete chat"
+                >
+                  ×
+                </button>
+              </div>
+            ))
+          )}
         </div>
         
         {/* Profile Section */}
@@ -302,8 +648,9 @@ function ChatBot() {
           {profileOpen && (
             <div className="profile-dropdown">
               <div className="profile-info">
-                <div className="username">Guest</div>
-                <div className="email">-</div>
+                <div className="username">{userInfo.name}</div>
+                <div className="email">{userInfo.email}</div>
+                <div className="user-role">Role: {userInfo.role}</div>
               </div>
               <button className="logout-btn" onClick={handleLogout}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -337,6 +684,10 @@ function ChatBot() {
           </div>
           
           <div className="header-right">
+            <div className="role-indicator">
+              
+              
+            </div>
             <button 
               className="theme-toggle"
               onClick={() => setDarkMode(!darkMode)}
@@ -368,6 +719,11 @@ function ChatBot() {
           <div className="messages">
             {messages.map((msg, index) => (
               <div key={index} className={`message ${msg.sender}`}>
+                {msg.access_restricted && (
+                  <div className="access-warning">
+                    Access Restricted
+                  </div>
+                )}
                 {msg.sender === 'bot' ? (
                   <FormattedMessage text={msg.text} />
                 ) : (

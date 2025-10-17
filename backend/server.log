@@ -1,0 +1,183 @@
+2025-10-13 12:10:19,970 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-10-13 12:10:19,971 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-13 12:10:19,974 - INFO -  * Restarting with stat
+2025-10-13 12:10:22,036 - WARNING -  * Debugger is active!
+2025-10-13 12:10:22,050 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 12:21:06,957 - INFO - 127.0.0.1 - - [13/Oct/2025 12:21:06] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 12:21:25,638 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 12:21:32,433 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2025-10-13 12:21:35,599 - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-10-13 12:21:35,629 - INFO - 127.0.0.1 - - [13/Oct/2025 12:21:35] "POST /api/query HTTP/1.1" 200 -
+2025-10-13 12:29:05,036 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:05] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-13 12:29:05,234 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:05] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-13 12:29:05,358 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:05] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-13 12:29:05,545 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:05] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-13 12:29:08,350 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:08] "GET /admin/students HTTP/1.1" 200 -
+2025-10-13 12:29:08,657 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:08] "GET /admin/teachers HTTP/1.1" 200 -
+2025-10-13 12:29:09,598 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:09] "GET /admin/queries HTTP/1.1" 200 -
+2025-10-13 12:29:15,736 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:15] "GET /admin/documents HTTP/1.1" 200 -
+2025-10-13 12:29:20,846 - INFO - 127.0.0.1 - - [13/Oct/2025 12:29:20] "GET /admin/stats HTTP/1.1" 200 -
+2025-10-13 13:22:15,030 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_users.py', reloading
+2025-10-13 13:22:19,846 - INFO -  * Restarting with stat
+2025-10-13 13:22:22,734 - WARNING -  * Debugger is active!
+2025-10-13 13:22:22,737 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 13:22:29,287 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_users.py', reloading
+2025-10-13 13:22:29,532 - INFO -  * Restarting with stat
+2025-10-13 13:22:31,550 - WARNING -  * Debugger is active!
+2025-10-13 13:22:31,553 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 13:23:01,139 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_users.py', reloading
+2025-10-13 13:23:01,344 - INFO -  * Restarting with stat
+2025-10-13 13:23:03,316 - WARNING -  * Debugger is active!
+2025-10-13 13:23:03,320 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 13:23:17,618 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_users.py', reloading
+2025-10-13 13:23:17,892 - INFO -  * Restarting with stat
+2025-10-13 13:23:20,440 - WARNING -  * Debugger is active!
+2025-10-13 13:23:20,443 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 13:23:26,876 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_users.py', reloading
+2025-10-13 13:23:27,083 - INFO -  * Restarting with stat
+2025-10-13 13:23:29,901 - WARNING -  * Debugger is active!
+2025-10-13 13:23:29,913 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 13:36:45,872 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_users.py', reloading
+2025-10-13 13:36:46,452 - INFO -  * Restarting with stat
+2025-10-13 13:36:49,041 - WARNING -  * Debugger is active!
+2025-10-13 13:36:49,045 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 13:37:22,343 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_users.py', reloading
+2025-10-13 13:37:22,556 - INFO -  * Restarting with stat
+2025-10-13 13:37:24,724 - WARNING -  * Debugger is active!
+2025-10-13 13:37:24,727 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 14:54:59,316 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_acdemic_data.py', reloading
+2025-10-13 14:55:00,055 - INFO -  * Restarting with stat
+2025-10-13 14:55:03,037 - WARNING -  * Debugger is active!
+2025-10-13 14:55:03,046 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 14:57:23,112 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 14:57:23,330 - INFO -  * Restarting with stat
+2025-10-13 14:57:25,722 - WARNING -  * Debugger is active!
+2025-10-13 14:57:25,730 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 14:57:29,044 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 14:57:29,258 - INFO -  * Restarting with stat
+2025-10-13 14:57:31,434 - WARNING -  * Debugger is active!
+2025-10-13 14:57:31,437 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 14:57:38,049 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 14:57:38,267 - INFO -  * Restarting with stat
+2025-10-13 14:57:40,595 - WARNING -  * Debugger is active!
+2025-10-13 14:57:40,599 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 14:59:05,366 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 14:59:05,611 - INFO -  * Restarting with stat
+2025-10-13 14:59:07,936 - WARNING -  * Debugger is active!
+2025-10-13 14:59:07,944 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 14:59:13,187 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 14:59:13,416 - INFO -  * Restarting with stat
+2025-10-13 14:59:15,672 - WARNING -  * Debugger is active!
+2025-10-13 14:59:15,675 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:03:58,463 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:03:58,852 - INFO -  * Restarting with stat
+2025-10-13 15:04:01,335 - WARNING -  * Debugger is active!
+2025-10-13 15:04:01,338 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:04:15,186 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:04:15,409 - INFO -  * Restarting with stat
+2025-10-13 15:04:17,653 - WARNING -  * Debugger is active!
+2025-10-13 15:04:17,655 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:09:42,108 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:09:42,601 - INFO -  * Restarting with stat
+2025-10-13 15:09:45,469 - WARNING -  * Debugger is active!
+2025-10-13 15:09:45,473 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:09:47,759 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:09:48,008 - INFO -  * Restarting with stat
+2025-10-13 15:09:50,371 - WARNING -  * Debugger is active!
+2025-10-13 15:09:50,374 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:11:33,221 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:11:33,493 - INFO -  * Restarting with stat
+2025-10-13 15:11:35,649 - WARNING -  * Debugger is active!
+2025-10-13 15:11:35,652 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:11:37,223 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:11:37,428 - INFO -  * Restarting with stat
+2025-10-13 15:11:39,425 - WARNING -  * Debugger is active!
+2025-10-13 15:11:39,427 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:11:43,048 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:11:43,287 - INFO -  * Restarting with stat
+2025-10-13 15:11:45,423 - WARNING -  * Debugger is active!
+2025-10-13 15:11:45,428 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:15:26,586 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:15:26,967 - INFO -  * Restarting with stat
+2025-10-13 15:15:30,394 - WARNING -  * Debugger is active!
+2025-10-13 15:15:30,401 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:16:55,368 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:16:55,588 - INFO -  * Restarting with stat
+2025-10-13 15:16:57,865 - WARNING -  * Debugger is active!
+2025-10-13 15:16:57,868 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:17:01,283 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:17:01,521 - INFO -  * Restarting with stat
+2025-10-13 15:17:03,537 - WARNING -  * Debugger is active!
+2025-10-13 15:17:03,541 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:17:09,924 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\import_academic_data.py', reloading
+2025-10-13 15:17:10,202 - INFO -  * Restarting with stat
+2025-10-13 15:17:12,285 - WARNING -  * Debugger is active!
+2025-10-13 15:17:12,288 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:29:21,182 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\query_llm.py', reloading
+2025-10-13 15:29:21,514 - INFO -  * Restarting with stat
+2025-10-13 15:29:24,291 - WARNING -  * Debugger is active!
+2025-10-13 15:29:24,294 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:29:55,039 - INFO - 127.0.0.1 - - [13/Oct/2025 15:29:55] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 15:30:10,853 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 15:30:17,779 - INFO - 127.0.0.1 - - [13/Oct/2025 15:30:17] "[35m[1mPOST /api/query HTTP/1.1[0m" 500 -
+2025-10-13 15:32:58,186 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\query_llm.py', reloading
+2025-10-13 15:32:59,237 - INFO -  * Restarting with stat
+2025-10-13 15:33:01,927 - WARNING -  * Debugger is active!
+2025-10-13 15:33:01,931 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:33:55,095 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\query_llm.py', reloading
+2025-10-13 15:33:55,345 - INFO -  * Restarting with stat
+2025-10-13 15:33:57,819 - WARNING -  * Debugger is active!
+2025-10-13 15:33:57,822 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:34:04,352 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\query_llm.py', reloading
+2025-10-13 15:34:04,628 - INFO -  * Restarting with stat
+2025-10-13 15:34:08,035 - WARNING -  * Debugger is active!
+2025-10-13 15:34:08,041 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 15:36:23,899 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\query_llm.py', reloading
+2025-10-13 15:36:24,166 - INFO -  * Restarting with stat
+2025-10-13 15:36:26,348 - WARNING -  * Debugger is active!
+2025-10-13 15:36:26,351 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 16:42:54,013 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\query_llm.py', reloading
+2025-10-13 16:42:54,596 - INFO -  * Restarting with stat
+2025-10-13 16:43:00,919 - WARNING -  * Debugger is active!
+2025-10-13 16:43:00,929 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 18:39:43,540 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-10-13 18:39:43,540 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-13 18:39:43,542 - INFO -  * Restarting with stat
+2025-10-13 18:39:45,748 - WARNING -  * Debugger is active!
+2025-10-13 18:39:45,751 - INFO -  * Debugger PIN: 142-618-534
+2025-10-13 18:41:10,852 - INFO - 127.0.0.1 - - [13/Oct/2025 18:41:10] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 18:41:29,254 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 18:41:36,430 - INFO - 127.0.0.1 - - [13/Oct/2025 18:41:36] "POST /api/query HTTP/1.1" 200 -
+2025-10-13 18:41:56,900 - INFO - 127.0.0.1 - - [13/Oct/2025 18:41:56] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 18:41:57,163 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 18:42:01,815 - INFO - 127.0.0.1 - - [13/Oct/2025 18:42:01] "POST /api/query HTTP/1.1" 200 -
+2025-10-13 18:42:20,792 - INFO - 127.0.0.1 - - [13/Oct/2025 18:42:20] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 18:42:21,060 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 18:42:25,171 - INFO - 127.0.0.1 - - [13/Oct/2025 18:42:25] "POST /api/query HTTP/1.1" 200 -
+2025-10-13 18:42:42,311 - INFO - 127.0.0.1 - - [13/Oct/2025 18:42:42] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 18:42:42,577 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 18:42:46,912 - INFO - 127.0.0.1 - - [13/Oct/2025 18:42:46] "POST /api/query HTTP/1.1" 200 -
+2025-10-13 18:42:58,319 - INFO - 127.0.0.1 - - [13/Oct/2025 18:42:58] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 18:42:58,588 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 18:43:02,568 - INFO - 127.0.0.1 - - [13/Oct/2025 18:43:02] "POST /api/query HTTP/1.1" 200 -
+2025-10-13 18:43:28,374 - INFO - 127.0.0.1 - - [13/Oct/2025 18:43:28] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 18:43:28,640 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 18:43:33,258 - INFO - 127.0.0.1 - - [13/Oct/2025 18:43:33] "POST /api/query HTTP/1.1" 200 -
+2025-10-13 18:43:55,459 - INFO - 127.0.0.1 - - [13/Oct/2025 18:43:55] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-13 18:43:55,725 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-13 18:44:00,335 - INFO - 127.0.0.1 - - [13/Oct/2025 18:44:00] "POST /api/query HTTP/1.1" 200 -
+2025-10-14 11:16:07,296 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-10-14 11:16:07,297 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-14 11:16:07,299 - INFO -  * Restarting with stat
+2025-10-14 11:16:09,042 - WARNING -  * Debugger is active!
+2025-10-14 11:16:09,053 - INFO -  * Debugger PIN: 142-618-534
+2025-10-14 11:17:09,994 - INFO - 127.0.0.1 - - [14/Oct/2025 11:17:09] "OPTIONS /api/query HTTP/1.1" 200 -
+2025-10-14 11:17:22,797 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-14 11:17:29,256 - INFO - 127.0.0.1 - - [14/Oct/2025 11:17:29] "POST /api/query HTTP/1.1" 200 -
+2025-10-14 11:33:11,348 - INFO -  * Detected change in 'C:\\Users\\Dell\\Desktop\\FinalYearProject\\backend\\server.py', reloading
+2025-10-14 11:33:12,876 - INFO -  * Restarting with stat
+2025-10-14 11:33:17,996 - INFO -  * Restarting with stat
+2025-10-14 12:03:31,348 - INFO -  * Restarting with stat

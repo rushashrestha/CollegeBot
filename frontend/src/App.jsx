@@ -4,6 +4,7 @@ import LoginSignup from './Components/LoginSignup/LoginSignup';
 import ChatBot from './Components/ChatBot/ChatBot';
 import AdminDashboard from './Components/AdminDashboard/AdminDashboard';
 import AdminRoute from './utils/AdminRoute';
+import ProtectedRoute from './utils/ProtectedRoute';
 
 function App() {
   return (
@@ -13,11 +14,25 @@ function App() {
           {/* Default route - redirect to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           
-          {/* Login/Signup route */}
-          <Route path="/login" element={<LoginSignup />} />
+          {/* Login/Signup route - redirect to chat if already authenticated */}
+          <Route 
+            path="/login" 
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <LoginSignup />
+              </ProtectedRoute>
+            } 
+          />
           
-          {/* Chat route - accessible to all authenticated users and guests */}
-          <Route path="/chat" element={<ChatBot />} />
+          {/* Chat route - protected, only for authenticated users */}
+          <Route 
+            path="/chat" 
+            element={
+              <ProtectedRoute>
+                <ChatBot />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Admin route - protected, only for admin users */}
           <Route 
