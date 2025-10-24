@@ -97,7 +97,7 @@
 
 .nav-tab {
   background: transparent;
-  border: none;
+  border: transparent;
   padding: 1rem 0;
   margin-right: 2rem;
   color: #6c757d;
@@ -962,3 +962,4 @@
 .clear-search:hover {
   color: #333;
 }
+
