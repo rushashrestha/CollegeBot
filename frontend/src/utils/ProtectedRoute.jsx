@@ -3,62 +3,70 @@ import { Navigate } from "react-router-dom";
 import { getCurrentSession } from "./auth.js";
 
 const ProtectedRoute = ({ children, requireAuth = true }) => {
-  // ✅ Initialize with synchronous checks IMMEDIATELY
+  // ✅ Initialize with synchronous checks FIRST for instant navigation
   const getInitialAuth = () => {
-    // ✅ CHECK: If logout is in progress, deny all auth
+    console.log("🔍 [ProtectedRoute] getInitialAuth called");
+    
+    // CHECK: If logout is in progress, deny all auth
     if (sessionStorage.getItem("logoutInProgress") === "true") {
       console.log("🚪 Logout in progress, denying auth");
       return {
         isAuthenticated: false,
         userRole: null,
-        needsAsyncCheck: false
+        needsVerification: false
       };
     }
     
-    // Check sessionStorage buffer FIRST (synchronous)
+    // Check sessionStorage buffer FIRST (synchronous, fresh from login)
     const authBuffer = sessionStorage.getItem("authBuffer");
+    console.log("📦 authBuffer:", authBuffer);
+    
     if (authBuffer) {
       try {
         const bufferData = JSON.parse(authBuffer);
         const age = Date.now() - bufferData.timestamp;
         
-        // ✅ Buffer expires after 5 seconds
-        if (age < 5000) {
-          console.log("✅ [SYNC] Using sessionStorage buffer (age: " + age + "ms)");
+        console.log("⏱️ Buffer age:", age, "ms");
+        
+        // Buffer valid for 10 seconds (extended from 5)
+        if (age < 10000) {
+          console.log("✅ [SYNC] Using fresh buffer - INSTANT AUTH", bufferData);
           return {
             isAuthenticated: true,
             userRole: bufferData.userRole,
-            needsAsyncCheck: false
+            needsVerification: bufferData.userRole !== "admin" && bufferData.userRole !== "guest"
           };
         } else {
-          console.log("⏰ Auth buffer expired, clearing...");
+          console.log("⏰ Buffer expired");
           sessionStorage.removeItem("authBuffer");
         }
       } catch (e) {
-        console.error("❌ Error parsing auth buffer:", e);
+        console.error("❌ Error parsing buffer:", e);
         sessionStorage.removeItem("authBuffer");
       }
     }
     
-    // Check localStorage (synchronous)
-    const localAuth = localStorage.getItem("isAuthenticated");
-    const role = localStorage.getItem("userRole");
+    // Check localStorage for existing session (page refresh case)
+    const storedAuth = localStorage.getItem("isAuthenticated");
+    const storedRole = localStorage.getItem("userRole");
     
-    if (localAuth === "true" && role) {
-      console.log("✅ [SYNC] Using localStorage (role: " + role + ")");
+    console.log("💾 localStorage check:", { storedAuth, storedRole });
+    
+    if (storedAuth === "true" && storedRole) {
+      console.log("✅ [SYNC] Using localStorage");
       return {
         isAuthenticated: true,
-        userRole: role,
-        needsAsyncCheck: false
+        userRole: storedRole,
+        needsVerification: storedRole !== "admin" && storedRole !== "guest"
       };
     }
     
-    console.log("❌ [SYNC] No valid auth found, need async check");
-    // Not authenticated yet, need async check
+    // No auth found - need to show loading and verify
+    console.log("❌ [SYNC] No auth found");
     return {
       isAuthenticated: false,
       userRole: null,
-      needsAsyncCheck: true
+      needsVerification: true
     };
   };
 
@@ -66,47 +74,96 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
   
   const [isAuthenticated, setIsAuthenticated] = useState(initialState.isAuthenticated);
   const [userRole, setUserRole] = useState(initialState.userRole);
-  const [loading, setLoading] = useState(initialState.needsAsyncCheck);
+  const [loading, setLoading] = useState(false); // Start with false, only show if needed
 
   useEffect(() => {
-    // If we already have auth from sync check, skip async check
-    if (!initialState.needsAsyncCheck) {
-      console.log("✅ Already authenticated from sync check, skipping async");
+    // Skip verification completely for admin and guest
+    if (initialState.userRole === "admin" || initialState.userRole === "guest") {
+      console.log("⏭️ Skipping verification for admin/guest");
+      setLoading(false);
       return;
     }
 
-    const checkAuth = async () => {
-      try {
-        console.log("🔍 Running async Supabase check...");
-        const session = await getCurrentSession();
+    // Skip verification if not needed
+    if (!initialState.needsVerification) {
+      console.log("⏭️ Skipping verification (not needed)");
+      setLoading(false);
+      return;
+    }
 
-        if (session) {
-          console.log("✅ Authenticated via Supabase session");
-          setIsAuthenticated(true);
+    // Background verification for Supabase users
+    const verifyAuth = async () => {
+      console.log("=== BACKGROUND VERIFICATION START ===");
+      
+      // Don't show loading if we already have instant auth
+      if (!initialState.isAuthenticated) {
+        setLoading(true);
+      }
+      
+      try {
+        console.log("🔍 Calling getCurrentSession...");
+        const session = await getCurrentSession();
+        console.log("📥 Session result:", session ? "Valid" : "Invalid");
+
+        if (session && session.user) {
+          console.log("✅ Valid Supabase session:", session.user.email);
           
-          // Update localStorage
-          const email = session.user?.email;
-          if (email && !localStorage.getItem("userRole")) {
-            localStorage.setItem("isAuthenticated", "true");
-            localStorage.setItem("userEmail", email);
+          const storedEmail = localStorage.getItem("userEmail");
+          const storedRole = localStorage.getItem("userRole");
+          
+          console.log("💾 Stored data:", { storedEmail, storedRole });
+          
+          // Verify stored data matches session
+          if (storedEmail === session.user.email && storedRole) {
+            console.log("✅ Verification passed");
+            setIsAuthenticated(true);
+            setUserRole(storedRole);
+          } else {
+            console.log("⚠️ Mismatch detected, clearing storage");
+            localStorage.clear();
+            sessionStorage.clear();
+            setIsAuthenticated(false);
+            setUserRole(null);
           }
         } else {
-          console.log("❌ Not authenticated");
-          setIsAuthenticated(false);
+          console.log("❌ No valid session");
+          
+          // Only clear if we're past the buffer window
+          const authBuffer = sessionStorage.getItem("authBuffer");
+          if (!authBuffer) {
+            console.log("🧹 Clearing storage (no buffer)");
+            localStorage.clear();
+            sessionStorage.clear();
+            setIsAuthenticated(false);
+            setUserRole(null);
+          } else {
+            console.log("⏳ Keeping auth (buffer still valid)");
+          }
         }
       } catch (error) {
-        console.error("❌ Auth check error:", error);
-        setIsAuthenticated(false);
+        console.error("❌ Verification error:", error);
+        
+        // Don't clear on error if we have instant auth
+        if (!initialState.isAuthenticated) {
+          localStorage.clear();
+          sessionStorage.clear();
+          setIsAuthenticated(false);
+          setUserRole(null);
+        }
       } finally {
         setLoading(false);
+        console.log("=== BACKGROUND VERIFICATION END ===");
       }
     };
 
-    checkAuth();
-  }, [initialState.needsAsyncCheck]);
+    // Small delay to let Supabase session settle
+    const timer = setTimeout(verifyAuth, 100);
+    return () => clearTimeout(timer);
+  }, [initialState.isAuthenticated, initialState.needsVerification]);
 
-  // ✅ Show loading state only if we need async check
+  // ✅ Show loading only if needed
   if (loading) {
+    console.log("⏳ Showing loading screen");
     return (
       <div
         style={{
@@ -127,7 +184,7 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
             animation: "spin 1s linear infinite",
             margin: "0 auto 16px"
           }} />
-          <div style={{ color: "#666" }}>Loading...</div>
+          <div style={{ color: "#666" }}>Verifying...</div>
         </div>
         <style>{`
           @keyframes spin {
@@ -138,6 +195,8 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
       </div>
     );
   }
+
+  console.log("🎯 Render decision:", { requireAuth, isAuthenticated, userRole });
 
   // 🧩 Case 1: Needs authentication but not authenticated → Go to login
   if (requireAuth && !isAuthenticated) {

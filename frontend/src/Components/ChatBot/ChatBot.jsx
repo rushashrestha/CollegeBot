@@ -104,7 +104,7 @@ const FormattedMessage = ({ text }) => {
 
 function ChatBot() {
   const [showLoader, setShowLoader] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [query, setQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -126,6 +126,18 @@ function ChatBot() {
     },
   ]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  //  STATES FOR PASSWORD CHANGE
+
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Speech Recognition States
   const [isListening, setIsListening] = useState(false);
@@ -279,6 +291,17 @@ function ChatBot() {
     };
   }, []);
 
+  useEffect(() => {
+    const shouldShowModal = sessionStorage.getItem("show_password_modal");
+    if (shouldShowModal === "true" && userRole !== "guest") {
+      sessionStorage.removeItem("show_password_modal");
+      // Wait a bit for UI to settle
+      setTimeout(() => {
+        setShowChangePasswordModal(true);
+      }, 1000);
+    }
+  }, [userRole]);
+
   // Function to fetch user data
   const fetchUserData = async (email, role) => {
     try {
@@ -385,52 +408,55 @@ function ChatBot() {
   }, [messages]);
 
   // Save current session ID to localStorage
-useEffect(() => {
-  if (currentSessionId) {
-    localStorage.setItem('currentSessionId', currentSessionId);
-  } else {
-    localStorage.removeItem('currentSessionId');
-  }
-}, [currentSessionId]);
+  useEffect(() => {
+    if (currentSessionId) {
+      localStorage.setItem("currentSessionId", currentSessionId);
+    } else {
+      localStorage.removeItem("currentSessionId");
+    }
+  }, [currentSessionId]);
 
-// Restore session messages on reload
-useEffect(() => {
-  const restoreSession = async () => {
-    if (currentSessionId && messages.length === 1 && !showLoader) {
-      console.log("🔄 Restoring session on reload:", currentSessionId);
-      
-      if (currentSessionId.startsWith('guest-') || currentSessionId.startsWith('local-')) {
-        return;
-      }
+  // Restore session messages on reload
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (currentSessionId && messages.length === 1 && !showLoader) {
+        console.log("🔄 Restoring session on reload:", currentSessionId);
 
-      try {
-        const { data, error } = await getChatMessages(currentSessionId);
-        
-        if (error || !data) {
-          console.log("⚠️ Session not found, clearing");
-          setCurrentSessionId(null);
+        if (
+          currentSessionId.startsWith("guest-") ||
+          currentSessionId.startsWith("local-")
+        ) {
           return;
         }
 
-        if (data.length > 0) {
-          const formattedMessages = data.map((msg) => ({
-            text: msg.message_text,
-            sender: msg.sender,
-            timestamp: new Date(msg.created_at),
-          }));
+        try {
+          const { data, error } = await getChatMessages(currentSessionId);
 
-          console.log("✅ Session restored with", data.length, "messages");
-          setMessages(formattedMessages);
+          if (error || !data) {
+            console.log("⚠️ Session not found, clearing");
+            setCurrentSessionId(null);
+            return;
+          }
+
+          if (data.length > 0) {
+            const formattedMessages = data.map((msg) => ({
+              text: msg.message_text,
+              sender: msg.sender,
+              timestamp: new Date(msg.created_at),
+            }));
+
+            console.log("✅ Session restored with", data.length, "messages");
+            setMessages(formattedMessages);
+          }
+        } catch (error) {
+          console.error("💥 Error restoring session:", error);
+          setCurrentSessionId(null);
         }
-      } catch (error) {
-        console.error("💥 Error restoring session:", error);
-        setCurrentSessionId(null);
       }
-    }
-  };
+    };
 
-  restoreSession();
-}, [currentSessionId, showLoader]);
+    restoreSession();
+  }, [currentSessionId, showLoader]);
 
   // Speech Recognition Functions
   const startListening = () => {
@@ -700,7 +726,7 @@ useEffect(() => {
 
   const handleLogout = async () => {
     console.log("🚪 LOGOUT INITIATED");
-    localStorage.removeItem('currentSessionId');
+    localStorage.removeItem("currentSessionId");
     // ✅ STEP 1: Clear ALL storage SYNCHRONOUSLY first
     localStorage.clear();
     sessionStorage.clear();
@@ -730,7 +756,7 @@ useEffect(() => {
 
   const handleNewChat = async () => {
     console.log("🆕 handleNewChat called - Starting new chat");
-     localStorage.removeItem('currentSessionId'); 
+    localStorage.removeItem("currentSessionId");
     // Stop any ongoing speech recognition
     if (isListening) {
       stopListening();
@@ -799,6 +825,100 @@ useEffect(() => {
         },
       ]);
       setSidebarOpen(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    setIsChangingPassword(true);
+
+    // Validation
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+      setIsChangingPassword(false);
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("Passwords do not match");
+      setIsChangingPassword(false);
+      return;
+    }
+
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      setPasswordError("New password must be different from current password");
+      setIsChangingPassword(false);
+      return;
+    }
+
+    try {
+      // Import supabase at top of file if not already
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+
+      // First verify current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: userInfo.email,
+        password: passwordForm.currentPassword,
+      });
+
+      if (signInError) {
+        setPasswordError("Current password is incorrect");
+        setIsChangingPassword(false);
+        return;
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword,
+      });
+
+      if (updateError) throw updateError;
+
+      // Mark as changed in localStorage
+      localStorage.setItem(`password_changed_${userInfo.email}`, "true");
+
+      // ✅ ALSO update in database
+      try {
+        const tableName =
+          userRole === "student" ? "students_data" : "teachers_data";
+        await fetch("http://localhost:5000/api/mark-password-changed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: userInfo.email,
+            table: tableName,
+          }),
+        });
+        console.log("✅ Password change status updated in database");
+      } catch (dbError) {
+        console.warn(
+          "⚠️ Failed to update database, but localStorage updated:",
+          dbError
+        );
+      }
+
+      setPasswordSuccess(true);
+      setShowChangePasswordModal(false);
+
+      setTimeout(() => {
+        setShowChangePasswordModal(false);
+        setPasswordSuccess(false);
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setIsChangingPassword(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Password change error:", error);
+      setPasswordError(error.message || "Failed to change password");
+      setIsChangingPassword(false);
     }
   };
 
@@ -946,6 +1066,42 @@ useEffect(() => {
                 <div className="email">{userInfo.email}</div>
                 <div className="user-role">Role: {userInfo.role}</div>
               </div>
+
+              {/* ADD THIS CHANGE PASSWORD BUTTON ⬇️ */}
+              {userRole !== "guest" && (
+                <button
+                  className="change-password-btn"
+                  onClick={() => {
+                    setShowChangePasswordModal(true);
+                    setProfileOpen(false);
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="3"
+                      y="11"
+                      width="18"
+                      height="11"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                  Change Password
+                </button>
+              )}
+
               <button className="logout-btn" onClick={handleLogout}>
                 <svg
                   width="16"
@@ -1276,6 +1432,133 @@ useEffect(() => {
           )}
         </div>
       </div>
+
+      {showChangePasswordModal && (
+        <div
+          className="modal-overlay"
+          onClick={() =>
+            !isChangingPassword && setShowChangePasswordModal(false)
+          }
+        >
+          <div className="password-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Change Password</h3>
+              <button
+                className="close-modal"
+                onClick={() =>
+                  !isChangingPassword && setShowChangePasswordModal(false)
+                }
+                disabled={isChangingPassword}
+              >
+                ×
+              </button>
+            </div>
+
+            {passwordSuccess ? (
+              <div className="success-message">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="#10b981"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M8 12L11 15L16 9"
+                    stroke="#10b981"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <p>Password changed successfully!</p>
+              </div>
+            ) : (
+              <form onSubmit={handlePasswordChange}>
+                <div className="form-group">
+                  <label>Current Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        currentPassword: e.target.value,
+                      })
+                    }
+                    disabled={isChangingPassword}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>New Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        newPassword: e.target.value,
+                      })
+                    }
+                    placeholder="At least 6 characters"
+                    disabled={isChangingPassword}
+                    required
+                  />
+                  {passwordForm.newPassword && (
+                    <div className="password-strength">
+                      Strength:{" "}
+                      {passwordForm.newPassword.length < 6
+                        ? "❌ Too short"
+                        : passwordForm.newPassword.length < 8
+                        ? "⚠️ Weak"
+                        : "✅ Good"}
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    disabled={isChangingPassword}
+                    required
+                  />
+                </div>
+
+                {passwordError && (
+                  <div className="error-message">❌ {passwordError}</div>
+                )}
+
+                <button
+                  type="submit"
+                  className="submit-btn"
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword
+                    ? "Changing Password..."
+                    : "Change Password"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

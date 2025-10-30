@@ -5,33 +5,87 @@ import re
 import logging
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-import random
 from supabase import create_client, Client
-import json
+from nepali_datetime import datetime as nepali_datetime
+from datetime import datetime
+import uuid
+from dotenv import load_dotenv
+import requests  
 
-from query_llm import CollegeQuerySystem  # Your existing query system
+from query_llm import CollegeQuerySystem
 
 # ------------------- PyTorch/CUDA Fix -------------------
 import torch
-# Force CPU usage to avoid GPU memory issues
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 torch.cuda.is_available = lambda: False
 print("🔧 PyTorch configured to use CPU only")
 
-# ------------------- Global Variables -------------------
-query_logs = []
-system_stats = {
-    'total_queries': 0,
-    'successful_queries': 0,
-    'start_time': datetime.now() - timedelta(hours=48)
-}
+
+# ------------------- Load Environment Variables -------------------
+from dotenv import load_dotenv
+load_dotenv()  # This loads the .env file
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("VITE_SUPABASE_ANON_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+# ------------------- Debug Environment Variables -------------------
+print("\n" + "="*60)
+print("🔍 SUPABASE CONFIGURATION CHECK")
+print("="*60)
+print(f"📍 Supabase URL: {SUPABASE_URL[:50]}..." if SUPABASE_URL else "❌ MISSING SUPABASE_URL")
+print(f"🔑 Anon Key: {'✅ Present' if SUPABASE_KEY else '❌ MISSING'} (Length: {len(SUPABASE_KEY) if SUPABASE_KEY else 0})")
+print(f"🔑 Service Key: {'✅ Present' if SUPABASE_SERVICE_KEY else '❌ MISSING'} (Length: {len(SUPABASE_SERVICE_KEY) if SUPABASE_SERVICE_KEY else 0})")
+
+if SUPABASE_KEY:
+    print(f"   Anon Key preview: {SUPABASE_KEY[:20]}...")
+if SUPABASE_SERVICE_KEY:
+    print(f"   Service Key preview: {SUPABASE_SERVICE_KEY[:20]}...")
+print("="*60 + "\n")
+
+# ------------------- Initialize Supabase Clients -------------------
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in .env file!")
+
+# Check if service key is available
+if not SUPABASE_SERVICE_KEY:
+    print("⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY not found in environment!")
+    print("⚠️ Backend will use anon key - user creation will fail!")
+    print("⚠️ Please add SUPABASE_SERVICE_ROLE_KEY to your .env file")
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    supabase_admin: Client = supabase
+else:
+    print("✅ Using Supabase Service Role Key for backend operations")
+    # Use service_role key for ALL backend operations to bypass RLS and enable admin features
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    supabase_admin: Client = supabase
+    print("✅ Supabase clients initialized successfully\n")
+
+def test_service_key_permissions():
+    """Test if current service key has admin permissions"""
+    url = f"{SUPABASE_URL}/auth/v1/admin/users"
+    headers = {
+        'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
+        'apikey': SUPABASE_KEY
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        print(f"🔐 Service key test - Status: {response.status_code}")
+        if response.status_code == 200:
+            print("✅ Service key has admin permissions!")
+            users = response.json()
+            print(f"✅ Found {len(users)} users")
+            return True
+        else:
+            print(f"❌ Service key test failed: {response.text}")
+            return False
+    except Exception as e:
+        print(f"❌ Service key test error: {e}")
+        return False
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, supports_credentials=True)
 
 # ------------------- Config -------------------
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'data')
@@ -44,6 +98,80 @@ if not os.path.exists(UPLOAD_FOLDER):
 print(f"📁 Using data directory: {UPLOAD_FOLDER}")
 print(f"📁 Files in data directory: {os.listdir(UPLOAD_FOLDER) if os.path.exists(UPLOAD_FOLDER) else 'Directory not found'}")
 
+# ------------------- CORS Configuration -------------------
+@app.after_request
+def after_request(response):
+    # Only set headers if they're not already set (prevents duplicates)
+    if 'Access-Control-Allow-Origin' not in response.headers:
+        response.headers['Access-Control-Allow-Origin'] = 'http://localhost:5173'
+    if 'Access-Control-Allow-Headers' not in response.headers:
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    if 'Access-Control-Allow-Methods' not in response.headers:
+        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+    if 'Access-Control-Allow-Credentials' not in response.headers:
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+# Handle OPTIONS requests for all admin routes
+@app.route('/admin/students/<student_id>', methods=['OPTIONS'])
+@app.route('/admin/teachers/<teacher_id>', methods=['OPTIONS'])
+@app.route('/admin/force-password-update/<user_id>', methods=['OPTIONS'])
+@app.route('/admin/emergency-password-reset', methods=['OPTIONS'])
+@app.route('/admin/delete-and-recreate-user', methods=['OPTIONS'])
+def options_handler(student_id=None, teacher_id=None, user_id=None):
+    return '', 200
+
+# ------------------- Date Conversion Routes -------------------
+@app.route('/convert/ad-to-bs', methods=['POST'])
+def convert_ad_to_bs():
+    try:
+        data = request.get_json()
+        ad_date_str = data.get('ad_date')
+        
+        if not ad_date_str:
+            return jsonify({'error': 'AD date is required'}), 400
+        
+        ad_date = datetime.strptime(ad_date_str, '%Y-%m-%d')
+        bs_date = nepali_datetime.from_datetime_date(ad_date.date())
+        bs_date_str = bs_date.strftime('%Y-%m-%d')
+        
+        return jsonify({
+            'ad_date': ad_date_str,
+            'bs_date': bs_date_str
+        })
+        
+    except Exception as e:
+        logging.error(f"Error converting AD to BS: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/convert/bs-to-ad', methods=['POST'])
+def convert_bs_to_ad():
+    try:
+        data = request.get_json()
+        bs_date_str = data.get('bs_date')
+        
+        if not bs_date_str:
+            return jsonify({'error': 'BS date is required'}), 400
+        
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', bs_date_str):
+            return jsonify({'error': 'BS date must be in YYYY-MM-DD format'}), 400
+        
+        try:
+            bs_date = nepali_datetime.strptime(bs_date_str, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({'error': 'Invalid BS date'}), 400
+        
+        ad_date = bs_date.to_datetime_date()
+        ad_date_str = ad_date.strftime('%Y-%m-%d')
+        
+        return jsonify({
+            'bs_date': bs_date_str,
+            'ad_date': ad_date_str
+        })
+        
+    except Exception as e:
+        logging.error(f"Error converting BS to AD: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # ------------------- Title Generation Function -------------------
 def generate_chat_title(question):
@@ -68,7 +196,6 @@ def generate_chat_title(question):
     
     # Person queries
     elif any(phrase in question_lower for phrase in ['who is', 'information about', 'tell me about', 'details about']):
-        # Extract name using better regex
         name_patterns = [
             r'(?:who is|information about|tell me about|details about)\s+([^?.!]*)',
             r'^(?:can you tell me about|i want to know about)\s+([^?.!]*)'
@@ -78,7 +205,7 @@ def generate_chat_title(question):
             match = re.search(pattern, question_lower)
             if match and match.group(1).strip():
                 name = match.group(1).strip().title()
-                if len(name) > 2:  # Ensure it's a meaningful name
+                if len(name) > 2:
                     return f"About {name}"
         
         return "Personal Information"
@@ -126,7 +253,6 @@ def generate_chat_title(question):
         return "Student Information"
     
     else:
-        # Use first meaningful words - improved logic
         stop_words = {'what', 'how', 'when', 'where', 'why', 'who', 'which', 'tell', 'me', 'about', 
                      'information', 'can', 'you', 'please', 'could', 'would', 'the', 'a', 'an', 'is'}
         
@@ -135,15 +261,11 @@ def generate_chat_title(question):
         
         if words:
             meaningful_title = ' '.join(words[:4])
-            # Capitalize properly
             meaningful_title = ' '.join(word.capitalize() for word in meaningful_title.split())
             return meaningful_title if len(meaningful_title) <= 40 else meaningful_title[:37] + '...'
         
-        # Final fallback - use first 4 words
         first_words = ' '.join(question.split()[:4])
         return first_words if len(first_words) <= 40 else first_words[:37] + '...'
-
-
 
 # ------------------- Admin Routes -------------------
 
@@ -152,17 +274,13 @@ def get_admin_stats():
     try:
         print("📊 Fetching admin stats...")
         
-        # Get student count - use RPC or direct fetch without limit
+        # Get student count
         try:
             all_students = supabase.table('students_data').select('id').execute()
             total_students = len(all_students.data) if all_students.data else 0
             print(f"👥 Total students: {total_students}")
-            print(f"🔍 Students response type: {type(all_students)}")
-            print(f"🔍 Students response dir: {[attr for attr in dir(all_students) if not attr.startswith('_')]}")
         except Exception as e:
             print(f"⚠️ Error getting student count: {e}")
-            import traceback
-            traceback.print_exc()
             total_students = 0
 
         # Get teacher count
@@ -172,8 +290,6 @@ def get_admin_stats():
             print(f"👨‍🏫 Total teachers: {total_teachers}")
         except Exception as e:
             print(f"⚠️ Error getting teacher count: {e}")
-            import traceback
-            traceback.print_exc()
             total_teachers = 0
 
         # Get total queries from chat sessions
@@ -183,8 +299,6 @@ def get_admin_stats():
             print(f"💬 Total queries: {total_queries}")
         except Exception as e:
             print(f"⚠️ Error getting query count: {e}")
-            import traceback
-            traceback.print_exc()
             total_queries = 0
 
         # Get active users (users with sessions in last 24 hours)
@@ -204,13 +318,6 @@ def get_admin_stats():
         if os.path.exists(UPLOAD_FOLDER):
             doc_count = len([f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.md')])
         
-        print(f"👥 Total students: {total_students}")
-        print(f"👨‍🏫 Total teachers: {total_teachers}")
-        print(f"💬 Total queries: {total_queries}")
-        print(f"👤 Active users: {active_users}")
-        print(f"📄 Total documents: {doc_count}")
-        
-        # Calculate success rate (simplified)
         success_rate = 95.5
 
         return jsonify({
@@ -238,7 +345,6 @@ def get_admin_stats():
 @app.route('/admin/queries', methods=['GET'])
 def get_query_logs():
     try:
-        # Get recent chat sessions with messages
         sessions = supabase.table('chat_sessions')\
             .select('*, chat_messages(*)')\
             .order('created_at', desc=True)\
@@ -260,11 +366,10 @@ def get_query_logs():
                             'status': 'success'
                         })
         
-        return jsonify({'queries': query_logs[:20]})  # Return latest 20
+        return jsonify({'queries': query_logs[:20]})
     except Exception as e:
         logging.error(f"Error in /admin/queries: {str(e)}")
         return jsonify({'error': str(e), 'queries': []}), 500
-
 
 @app.route('/admin/documents', methods=['GET'])
 def get_documents():
@@ -272,7 +377,6 @@ def get_documents():
         print("📄 Fetching documents...")
         docs = []
         
-        # FIX: Read from the correct data directory
         if os.path.exists(UPLOAD_FOLDER):
             md_files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.md')]
             print(f"📁 Found {len(md_files)} .md files: {md_files}")
@@ -283,10 +387,9 @@ def get_documents():
                     stat = os.stat(file_path)
                     file_size_kb = stat.st_size / 1024
                     
-                    # Read file to count chunks (simplified - count paragraphs)
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
-                        chunks = content.count('\n\n') + 1  # Count paragraphs as chunks
+                        chunks = content.count('\n\n') + 1
                     
                     docs.append({
                         'id': i + 1,
@@ -329,11 +432,9 @@ def upload_document():
             return jsonify({'error': 'No file selected'}), 400
             
         if file and file.filename.endswith('.md'):
-            # FIX: Save to the correct data directory
             filename = secure_filename(file.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             
-            # Ensure directory exists
             if not os.path.exists(UPLOAD_FOLDER):
                 os.makedirs(UPLOAD_FOLDER)
             
@@ -355,7 +456,6 @@ def upload_document():
 @app.route('/admin/documents/<filename>', methods=['DELETE'])
 def delete_document(filename):
     try:
-        # FIX: Use secure filename and correct path
         safe_filename = secure_filename(filename)
         file_path = os.path.join(UPLOAD_FOLDER, safe_filename)
         
@@ -378,8 +478,6 @@ def reprocess_document(filename):
         file_path = os.path.join(UPLOAD_FOLDER, safe_filename)
         
         if os.path.exists(file_path):
-            # Add your reprocessing logic here
-            # For now, just return success
             print(f"✅ Document reprocess triggered: {safe_filename}")
             return jsonify({'success': True, 'message': f'Document {safe_filename} reprocessing started'})
         else:
@@ -389,6 +487,7 @@ def reprocess_document(filename):
         print(f"❌ Reprocess error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+# ------------------- Students CRUD -------------------
 @app.route('/admin/students', methods=['GET'])
 def get_students():
     try:
@@ -404,34 +503,71 @@ def add_student():
         data = request.get_json()
         print(f"📝 Adding student with data: {data}")
         
-        # Validate required fields
         required_fields = ['email', 'password', 'full_name', 'name', 'roll_no', 'program']
         for field in required_fields:
             if not data.get(field):
+                print(f"❌ Missing required field: {field}")
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
-        # First, create user in authentication table
-        auth_data = {
-            'email': data['email'],
-            'password': data['password'],  # You should hash this in production
-            'role': 'student',
-            'full_name': data['full_name']
-        }
+        # Check if email already exists in students table
+        existing_student = supabase.table('students_data').select('*').eq('email', data['email']).execute()
+        if existing_student.data:
+            print(f"❌ Email already exists: {data['email']}")
+            return jsonify({'error': 'Email already exists. Please use a different email address.'}), 400
         
-        # Insert into users table (authentication)
-        auth_response = supabase.table('users').insert(auth_data).execute()
-        if not auth_response.data:
-            return jsonify({'error': 'Failed to create user account'}), 500
+        # Create user in Supabase Auth using DIRECT API (not SDK)
+        try:
+            auth_url = f"{SUPABASE_URL}/auth/v1/admin/users"
+            headers = {
+                'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
+                'apikey': SUPABASE_KEY,
+                'Content-Type': 'application/json'
+            }
+            
+            auth_payload = {
+                "email": data['email'],
+                "password": data['password'],
+                "email_confirm": True,
+                "user_metadata": {
+                    "role": "student",
+                    "full_name": data['full_name']
+                }
+            }
+            
+            print(f"🔐 Creating auth user via direct API...")
+            auth_response = requests.post(auth_url, json=auth_payload, headers=headers, timeout=30)
+            
+            print(f"🔐 Auth API Response Status: {auth_response.status_code}")
+            print(f"🔐 Auth API Response: {auth_response.text}")
+            
+            if auth_response.status_code == 200:
+                user_data = auth_response.json()
+                supabase_user_id = user_data['id']
+                print(f"✅ Supabase auth user created via direct API: {supabase_user_id}")
+            else:
+                error_detail = auth_response.text
+                print(f"❌ Auth API failed: {error_detail}")
+                raise Exception(f"Auth API returned {auth_response.status_code}: {error_detail}")
+                
+        except Exception as auth_error:
+            print(f"❌ Auth user creation failed: {auth_error}")
+            return jsonify({'error': f'Failed to create authentication: {str(auth_error)}'}), 500
         
-        # Prepare student data
+        # Generate student_id
+        student_id = f"{data['roll_no']}-{data['program']}".upper().replace(' ', '')
+        existing_id = supabase.table('students_data').select('student_id').eq('student_id', student_id).execute()
+        if existing_id.data:
+            student_id = f"{student_id}-{str(uuid.uuid4())[:8]}"
+        
+        # Create student record
         student_data = {
+            'student_id': student_id,
             'name': data['name'],
             'dob_ad': data.get('dob_ad'),
             'dob_bs': data.get('dob_bs'),
             'gender': data.get('gender'),
             'phone': data.get('phone'),
             'email': data['email'],
-            'password': data['password'],  # Hash in production
             'perm_address': data.get('perm_address'),
             'temp_address': data.get('temp_address'),
             'program': data['program'],
@@ -441,62 +577,101 @@ def add_student():
             'roll_no': data['roll_no'],
             'symbol_no': data.get('symbol_no'),
             'registration_no': data.get('registration_no'),
-            'joined_date': data.get('joined_date')
+            'joined_date': data.get('joined_date'),
+            'supabase_user_id': supabase_user_id
         }
         
-        # Insert into students_data table
         student_response = supabase.table('students_data').insert(student_data).execute()
         
         if student_response.data:
+            print(f"✅ Student created successfully")
             return jsonify({
                 'success': True,
-                'message': 'Student added successfully',
+                'message': 'Student added successfully! They can now login.',
                 'student': student_response.data[0]
             })
         else:
-            # Rollback: delete the user if student creation fails
-            supabase.table('users').delete().eq('email', data['email']).execute()
+            # Rollback: delete auth user if student creation fails
+            try:
+                delete_url = f"{SUPABASE_URL}/auth/v1/admin/users/{supabase_user_id}"
+                requests.delete(delete_url, headers=headers)
+                print(f"✅ Rollback: deleted auth user {supabase_user_id}")
+            except Exception as delete_error:
+                print(f"⚠️ Failed to delete auth user during rollback: {delete_error}")
+            
             return jsonify({'error': 'Failed to create student record'}), 500
             
     except Exception as e:
         print(f"❌ Error adding student: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-    
-@app.route('/admin/students/<int:student_id>', methods=['PUT'])
+
+@app.route('/admin/students/<student_id>', methods=['PUT'])
 def update_student(student_id):
     try:
         data = request.get_json()
+        print(f"🔄 Updating student {student_id}")
         
-        # Update in database
+        allowed_fields = [
+            'name', 'dob_ad', 'dob_bs', 'gender', 'phone', 'email',
+            'perm_address', 'temp_address', 'program', 'batch', 'section',
+            'year_semester', 'roll_no', 'symbol_no', 'registration_no', 'joined_date'
+        ]
+        
+        update_data = {key: value for key, value in data.items() if key in allowed_fields}
+        
         response = supabase.table('students_data')\
-            .update(data)\
+            .update(update_data)\
             .eq('id', student_id)\
             .execute()
         
-        return jsonify({
-            'success': True,
-            'message': 'Student updated successfully',
-            'student': response.data[0] if response.data else None
-        })
+        if response.data:
+            # Update user metadata if full_name changed
+            if data.get('full_name'):
+                try:
+                    student = response.data[0]
+                    if student.get('supabase_user_id'):
+                        supabase_admin.auth.admin.update_user_by_id(
+                            student['supabase_user_id'],
+                            {"user_metadata": {"full_name": data['full_name']}}
+                        )
+                except Exception as meta_error:
+                    print(f"⚠️ Failed to update user metadata: {meta_error}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Student updated successfully',
+                'student': response.data[0]
+            })
+        else:
+            return jsonify({'error': 'Student not found'}), 404
+            
     except Exception as e:
         logging.error(f"Error updating student: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/admin/students/<int:student_id>', methods=['DELETE'])
+@app.route('/admin/students/<student_id>', methods=['DELETE'])
 def delete_student(student_id):
     try:
-        # First get student email
-        student_response = supabase.table('students_data').select('email').eq('id', student_id).execute()
+        # Get student details
+        student_response = supabase.table('students_data').select('*').eq('id', student_id).execute()
         if not student_response.data:
             return jsonify({'error': 'Student not found'}), 404
         
-        email = student_response.data[0]['email']
+        student = student_response.data[0]
+        supabase_user_id = student.get('supabase_user_id')
         
-        # Delete from students_data table
+        # Delete from students_data
         supabase.table('students_data').delete().eq('id', student_id).execute()
         
-        # Delete from users table
-        supabase.table('users').delete().eq('email', email).execute()
+        # Delete from Supabase Auth
+        if supabase_user_id:
+            try:
+                supabase_admin.auth.admin.delete_user(supabase_user_id)
+                print(f"✅ Deleted auth user: {supabase_user_id}")
+            except Exception as auth_error:
+                print(f"⚠️ Failed to delete auth user: {auth_error}")
         
         return jsonify({
             'success': True,
@@ -522,90 +697,157 @@ def add_teacher():
         data = request.get_json()
         print(f"📝 Adding teacher with data: {data}")
         
-        # Validate required fields
         required_fields = ['email', 'password', 'full_name', 'name', 'designation', 'subject']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
-        # First, create user in authentication table
-        auth_data = {
-            'email': data['email'],
-            'password': data['password'],  # You should hash this in production
-            'role': 'teacher',
-            'full_name': data['full_name']
-        }
+        # Check if email already exists
+        existing_teacher = supabase.table('teachers_data').select('*').eq('email', data['email']).execute()
+        if existing_teacher.data:
+            return jsonify({'error': 'Email already exists. Please use a different email address.'}), 400
         
-        # Insert into users table (authentication)
-        auth_response = supabase.table('users').insert(auth_data).execute()
-        if not auth_response.data:
-            return jsonify({'error': 'Failed to create user account'}), 500
+        # Create user in Supabase Auth using DIRECT API
+        try:
+            auth_url = f"{SUPABASE_URL}/auth/v1/admin/users"
+            headers = {
+                'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
+                'apikey': SUPABASE_KEY,
+                'Content-Type': 'application/json'
+            }
+            
+            auth_payload = {
+                "email": data['email'],
+                "password": data['password'],
+                "email_confirm": True,
+                "user_metadata": {
+                    "role": "teacher",
+                    "full_name": data['full_name']
+                }
+            }
+            
+            print(f"🔐 Creating teacher auth user via direct API...")
+            auth_response = requests.post(auth_url, json=auth_payload, headers=headers, timeout=30)
+            
+            print(f"🔐 Auth API Response Status: {auth_response.status_code}")
+            print(f"🔐 Auth API Response: {auth_response.text}")
+            
+            if auth_response.status_code == 200:
+                user_data = auth_response.json()
+                supabase_user_id = user_data['id']
+                print(f"✅ Supabase auth teacher created via direct API: {supabase_user_id}")
+            else:
+                error_detail = auth_response.text
+                print(f"❌ Auth API failed: {error_detail}")
+                raise Exception(f"Auth API returned {auth_response.status_code}: {error_detail}")
+                
+        except Exception as auth_error:
+            print(f"❌ Auth user creation failed: {auth_error}")
+            return jsonify({'error': f'Failed to create authentication: {str(auth_error)}'}), 500
         
-        # Prepare teacher data
+        # Create teacher record
         teacher_data = {
             'name': data['name'],
             'designation': data['designation'],
             'phone': data.get('phone'),
             'email': data['email'],
-            'password': data['password'],  # Hash in production
             'address': data.get('address'),
             'degree': data.get('degree'),
-            'subject': data['subject']
+            'subject': data['subject'],
+            'supabase_user_id': supabase_user_id
         }
         
-        # Insert into teachers_data table
         teacher_response = supabase.table('teachers_data').insert(teacher_data).execute()
         
         if teacher_response.data:
+            print(f"✅ Teacher created successfully")
             return jsonify({
                 'success': True,
-                'message': 'Teacher added successfully',
+                'message': 'Teacher added successfully! They can now login.',
                 'teacher': teacher_response.data[0]
             })
         else:
-            # Rollback: delete the user if teacher creation fails
-            supabase.table('users').delete().eq('email', data['email']).execute()
+            # Rollback: delete auth user if teacher creation fails
+            try:
+                delete_url = f"{SUPABASE_URL}/auth/v1/admin/users/{supabase_user_id}"
+                headers = {
+                    'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
+                    'apikey': SUPABASE_KEY
+                }
+                requests.delete(delete_url, headers=headers)
+                print(f"✅ Rollback: deleted auth user {supabase_user_id}")
+            except Exception as delete_error:
+                print(f"⚠️ Failed to delete auth user during rollback: {delete_error}")
+            
             return jsonify({'error': 'Failed to create teacher record'}), 500
             
     except Exception as e:
         print(f"❌ Error adding teacher: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/admin/teachers/<int:teacher_id>', methods=['PUT'])
+@app.route('/admin/teachers/<teacher_id>', methods=['PUT'])
 def update_teacher(teacher_id):
     try:
         data = request.get_json()
+        print(f"🔄 Updating teacher {teacher_id}")
         
-        # Update in database
+        allowed_fields = [
+            'name', 'designation', 'phone', 'email', 'address', 'degree', 'subject'
+        ]
+        
+        update_data = {key: value for key, value in data.items() if key in allowed_fields}
+        
         response = supabase.table('teachers_data')\
-            .update(data)\
+            .update(update_data)\
             .eq('id', teacher_id)\
             .execute()
         
-        return jsonify({
-            'success': True,
-            'message': 'Teacher updated successfully',
-            'teacher': response.data[0] if response.data else None
-        })
+        if response.data:
+            # Update user metadata if full_name changed
+            if data.get('full_name'):
+                try:
+                    teacher = response.data[0]
+                    if teacher.get('supabase_user_id'):
+                        supabase_admin.auth.admin.update_user_by_id(
+                            teacher['supabase_user_id'],
+                            {"user_metadata": {"full_name": data['full_name']}}
+                        )
+                except Exception as meta_error:
+                    print(f"⚠️ Failed to update user metadata: {meta_error}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Teacher updated successfully',
+                'teacher': response.data[0]
+            })
+        else:
+            return jsonify({'error': 'Teacher not found'}), 404
+            
     except Exception as e:
         logging.error(f"Error updating teacher: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/admin/teachers/<int:teacher_id>', methods=['DELETE'])
+@app.route('/admin/teachers/<teacher_id>', methods=['DELETE'])
 def delete_teacher(teacher_id):
     try:
-        # First get teacher email
-        teacher_response = supabase.table('teachers_data').select('email').eq('id', teacher_id).execute()
+        # Get teacher details
+        teacher_response = supabase.table('teachers_data').select('*').eq('id', teacher_id).execute()
         if not teacher_response.data:
             return jsonify({'error': 'Teacher not found'}), 404
         
-        email = teacher_response.data[0]['email']
+        teacher = teacher_response.data[0]
+        supabase_user_id = teacher.get('supabase_user_id')
         
-        # Delete from teachers_data table
+        # Delete from teachers_data
         supabase.table('teachers_data').delete().eq('id', teacher_id).execute()
         
-        # Delete from users table
-        supabase.table('users').delete().eq('email', email).execute()
+        # Delete from Supabase Auth
+        if supabase_user_id:
+            try:
+                supabase_admin.auth.admin.delete_user(supabase_user_id)
+                print(f"✅ Deleted auth user: {supabase_user_id}")
+            except Exception as auth_error:
+                print(f"⚠️ Failed to delete auth user: {auth_error}")
         
         return jsonify({
             'success': True,
@@ -614,12 +856,109 @@ def delete_teacher(teacher_id):
     except Exception as e:
         print(f"❌ Error deleting teacher: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mark-password-changed', methods=['POST'])
+def mark_password_changed():
+    """Mark that user has changed their password"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        table = data.get('table')
+        
+        if not email or not table:
+            return jsonify({'error': 'Email and table required'}), 400
+        
+        # Update the password_changed flag
+        response = supabase.table(table)\
+            .update({'password_changed': True})\
+            .eq('email', email)\
+            .execute()
+        
+        if response.data:
+            print(f"✅ Password change marked for {email} in {table}")
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'User not found'}), 404
+            
+    except Exception as e:
+        logging.error(f"Error marking password changed: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/check-password-changed', methods=['POST'])
+def check_password_changed():
+    """Check if user has changed their password"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        table = data.get('table')
+        
+        if not email or not table:
+            return jsonify({'error': 'Email and table required'}), 400
+        
+        # Check the password_changed flag
+        response = supabase.table(table)\
+            .select('password_changed')\
+            .eq('email', email)\
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            password_changed = response.data[0].get('password_changed', False)
+            return jsonify({'password_changed': password_changed})
+        else:
+            return jsonify({'password_changed': False})
+            
+    except Exception as e:
+        logging.error(f"Error checking password changed: {str(e)}")
+        return jsonify({'error': str(e)}), 500
     
+@app.route('/admin/force-password-update/<user_id>', methods=['POST'])
+def force_password_update(user_id):
+    """Force update password by user ID"""
+    try:
+        data = request.get_json()
+        new_password = data.get('password', 'student123')
+        
+        print(f"🔐 Force updating password for user ID: {user_id}")
+        
+        update_url = f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}"
+        headers = {
+            'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
+            'apikey': SUPABASE_KEY,
+            'Content-Type': 'application/json'
+        }
+        
+        update_payload = {
+            "password": new_password
+        }
+        
+        response = requests.put(
+            update_url,
+            json=update_payload,
+            headers=headers,
+            timeout=10
+        )
+        
+        print(f"Response: {response.status_code} - {response.text}")
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'message': f'Password updated to: {new_password}'
+            })
+        else:
+            return jsonify({
+                'error': response.text,
+                'status': response.status_code
+            }), response.status_code
+            
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 # ------------------- Analytics Endpoint -------------------
 @app.route('/admin/analytics', methods=['GET'])
 def get_analytics():
     try:
-        # Get query trends for the last 7 days
         from datetime import datetime, timedelta
         seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
         
@@ -628,13 +967,11 @@ def get_analytics():
             .gte('created_at', seven_days_ago)\
             .execute()
         
-        # Group by day
         daily_counts = {}
         for session in sessions.data:
-            date = session['created_at'][:10]  # Get YYYY-MM-DD
+            date = session['created_at'][:10]
             daily_counts[date] = daily_counts.get(date, 0) + 1
         
-        # Format for chart
         chart_data = [
             {'date': date, 'queries': count}
             for date, count in sorted(daily_counts.items())
@@ -648,7 +985,6 @@ def get_analytics():
         logging.error(f"Error fetching analytics: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# ------------------- LLM Query Route -------------------
 # ------------------- LLM Query Route -------------------
 @app.route('/api/query', methods=['POST'])
 def handle_query():
@@ -665,7 +1001,6 @@ def handle_query():
         print(f"   - Query: '{query}'")
         print(f"   - Session ID: {session_id}")
         print(f"   - Is Guest: {is_guest}")
-        print(f"   - User Data: {user_data is not None}")
 
         if not query:
             return jsonify({'error': 'No query provided'}), 400
@@ -673,7 +1008,6 @@ def handle_query():
         # Initialize query system
         system = CollegeQuerySystem()
         
-        # ========== FIX: PASS USER CONTEXT TO LLM ==========
         print(f"🔄 Calling LLM with user_role: {user_role}")
         response = system.generate_response(query, user_role, user_data)
         
@@ -692,22 +1026,6 @@ def handle_query():
         print(f"   - Length: {len(response)} chars")
         print(f"   - Access Restricted: {access_restricted}")
         print(f"   - Suggested Title: {suggested_title}")
-        
-        # Log query to global query_logs
-        global query_logs, system_stats
-        query_logs.append({
-            'id': len(query_logs) + 1,
-            'query': query,
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'response_time': '2.0s',
-            'status': 'success',
-            'response_length': len(response),
-            'user_role': user_role,
-            'is_guest': is_guest
-        })
-        
-        system_stats['total_queries'] += 1
-        system_stats['successful_queries'] += 1
         
         return jsonify({
             'response': response,
@@ -739,7 +1057,6 @@ def get_user_data():
         if not email or not table:
             return jsonify({'error': 'Email and table required'}), 400
         
-        # Use your existing _query_supabase method
         system = CollegeQuerySystem()
         user_data = system._query_supabase(table, params={"email": f"eq.{email}"})
         
@@ -752,9 +1069,6 @@ def get_user_data():
         logging.error("Error fetching user data: %s", str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/admin/query', methods=['POST'])
-def admin_query():
-    return handle_query()
 
 # ------------------- Health Check -------------------
 @app.route('/health', methods=['GET'])
@@ -774,6 +1088,6 @@ if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
     print("🚀 Flask server starting on http://127.0.0.1:5000")
-    print("📝 ALL users (including guests) can query without authentication!")
+    print("📝 Using Supabase Auth for authentication")
     print("🔓 Only highly sensitive security information is restricted")
     app.run(debug=True, host='127.0.0.1', port=5000, threaded=True)

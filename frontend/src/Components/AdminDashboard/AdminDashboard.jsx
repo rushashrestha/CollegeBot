@@ -2,6 +2,505 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
 
+// ----------------- Date Conversion Functions -----------------
+const convertADtoBS = async (adDate) => {
+  if (!adDate) return '';
+  
+  try {
+    const response = await fetch('http://localhost:5000/convert/ad-to-bs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ad_date: adDate })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.bs_date;
+    }
+    return '';
+  } catch (error) {
+    console.error('Error converting AD to BS:', error);
+    return '';
+  }
+};
+
+const convertBStoAD = async (bsDate) => {
+  if (!bsDate) return '';
+  
+  try {
+    const response = await fetch('http://localhost:5000/convert/bs-to-ad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bs_date: bsDate })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.ad_date;
+    }
+    return '';
+  } catch (error) {
+    console.error('Error converting BS to AD:', error);
+    return '';
+  }
+};
+
+
+
+// ----------------- Student Modal -----------------
+const StudentModal = ({ 
+  show, 
+  onClose, 
+  formData, 
+  onFormChange, 
+  onSubmit,
+  isEdit = false,
+  editId = null
+}) => {
+  if (!show) return null;
+
+  // Handle AD date change
+  const handleADDateChange = async (e) => {
+    const adDate = e.target.value;
+    onFormChange('dob_ad', adDate);
+    
+    // Auto-convert to BS
+    if (adDate) {
+      const bsDate = await convertADtoBS(adDate);
+      if (bsDate) {
+        onFormChange('dob_bs', bsDate);
+      }
+    } else {
+      onFormChange('dob_bs', '');
+    }
+  };
+
+  // Handle BS date change
+  const handleBSDateChange = async (e) => {
+    const bsDate = e.target.value;
+    onFormChange('dob_bs', bsDate);
+    
+    // Auto-convert to AD (only if format is YYYY-MM-DD)
+    if (bsDate && /^\d{4}-\d{2}-\d{2}$/.test(bsDate)) {
+      const adDate = await convertBStoAD(bsDate);
+      if (adDate) {
+        onFormChange('dob_ad', adDate);
+      }
+    } else if (!bsDate) {
+      onFormChange('dob_ad', '');
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h3>{isEdit ? 'Edit Student' : 'Add New Student'}</h3>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
+
+        <form onSubmit={onSubmit} className="modal-form">
+          <div className="form-section">
+            <h4>Login Information</h4>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Full Name *</label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => onFormChange('full_name', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => onFormChange('email', e.target.value)}
+                  required
+                  disabled={isEdit}
+                />
+              </div>
+            </div>
+            {!isEdit && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Password *</label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => onFormChange('password', e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="form-section">
+            <h4>Personal Information</h4>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Name (as in records) *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => onFormChange('name', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Gender</label>
+                <select
+                  value={formData.gender}
+                  onChange={(e) => onFormChange('gender', e.target.value)}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>DOB (A.D.)</label>
+                <input
+                  type="date"
+                  value={formData.dob_ad}
+                  onChange={handleADDateChange}
+                />
+                <small className="date-hint">Auto-converts to B.S.</small>
+              </div>
+              <div className="form-group">
+                <label>DOB (B.S.)</label>
+                <input
+                  type="text"
+                  placeholder="YYYY-MM-DD"
+                  value={formData.dob_bs}
+                  onChange={handleBSDateChange}
+                />
+                <small className="date-hint">Auto-converts to A.D.</small>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => onFormChange('phone', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Rest of the form remains the same */}
+          <div className="form-section">
+            <h4>Address Information</h4>
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Permanent Address</label>
+                <textarea
+                  value={formData.perm_address}
+                  onChange={(e) => onFormChange('perm_address', e.target.value)}
+                  rows="3"
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Temporary Address</label>
+                <textarea
+                  value={formData.temp_address}
+                  onChange={(e) => onFormChange('temp_address', e.target.value)}
+                  rows="3"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h4>Academic Information</h4>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Program *</label>
+                <input
+                  type="text"
+                  value={formData.program}
+                  onChange={(e) => onFormChange('program', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Batch</label>
+                <input
+                  type="text"
+                  value={formData.batch}
+                  onChange={(e) => onFormChange('batch', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Section</label>
+                <input
+                  type="text"
+                  value={formData.section}
+                  onChange={(e) => onFormChange('section', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Year/Semester</label>
+                <input
+                  type="text"
+                  value={formData.year_semester}
+                  onChange={(e) => onFormChange('year_semester', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Roll No. *</label>
+                <input
+                  type="text"
+                  value={formData.roll_no}
+                  onChange={(e) => onFormChange('roll_no', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Symbol No.</label>
+                <input
+                  type="text"
+                  value={formData.symbol_no}
+                  onChange={(e) => onFormChange('symbol_no', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Registration No.</label>
+                <input
+                  type="text"
+                  value={formData.registration_no}
+                  onChange={(e) => onFormChange('registration_no', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Joined Date</label>
+                <input
+                  type="date"
+                  value={formData.joined_date}
+                  onChange={(e) => onFormChange('joined_date', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary">
+              {isEdit ? 'Update Student' : 'Add Student'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Teacher Modal would have similar date conversion logic
+const TeacherModal = ({ 
+  show, 
+  onClose, 
+  formData, 
+  onFormChange, 
+  onSubmit,
+  isEdit = false,
+  editId = null
+}) => {
+  if (!show) return null;
+
+  // Handle AD date change for teacher (if they have DOB fields)
+  const handleADDateChange = async (e) => {
+    const adDate = e.target.value;
+    onFormChange('dob_ad', adDate);
+    
+    if (adDate) {
+      const bsDate = await convertADtoBS(adDate);
+      if (bsDate) {
+        onFormChange('dob_bs', bsDate);
+      }
+    } else {
+      onFormChange('dob_bs', '');
+    }
+  };
+
+  const handleBSDateChange = async (e) => {
+    const bsDate = e.target.value;
+    onFormChange('dob_bs', bsDate);
+    
+    if (bsDate && /^\d{4}-\d{2}-\d{2}$/.test(bsDate)) {
+      const adDate = await convertBStoAD(bsDate);
+      if (adDate) {
+        onFormChange('dob_ad', adDate);
+      }
+    } else if (!bsDate) {
+      onFormChange('dob_ad', '');
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h3>{isEdit ? 'Edit Teacher' : 'Add New Teacher'}</h3>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
+
+        <form onSubmit={onSubmit} className="modal-form">
+          <div className="form-section">
+            <h4>Login Information</h4>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Full Name *</label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => onFormChange('full_name', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => onFormChange('email', e.target.value)}
+                  required
+                  disabled={isEdit}
+                />
+              </div>
+            </div>
+            {!isEdit && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Password *</label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => onFormChange('password', e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="form-section">
+            <h4>Professional Information</h4>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Name (as in records) *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => onFormChange('name', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Designation *</label>
+                <input
+                  type="text"
+                  value={formData.designation}
+                  onChange={(e) => onFormChange('designation', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            {/* Add DOB fields for teachers if needed */}
+            <div className="form-row">
+              <div className="form-group">
+                <label>DOB (A.D.)</label>
+                <input
+                  type="date"
+                  value={formData.dob_ad || ''}
+                  onChange={handleADDateChange}
+                />
+                <small className="date-hint">Auto-converts to B.S.</small>
+              </div>
+              <div className="form-group">
+                <label>DOB (B.S.)</label>
+                <input
+                  type="text"
+                  placeholder="YYYY-MM-DD"
+                  value={formData.dob_bs || ''}
+                  onChange={handleBSDateChange}
+                />
+                <small className="date-hint">Auto-converts to A.D.</small>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => onFormChange('phone', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Subject *</label>
+                <input
+                  type="text"
+                  value={formData.subject}
+                  onChange={(e) => onFormChange('subject', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Address</label>
+                <textarea
+                  value={formData.address}
+                  onChange={(e) => onFormChange('address', e.target.value)}
+                  rows="3"
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Degree/Qualification</label>
+                <input
+                  type="text"
+                  value={formData.degree}
+                  onChange={(e) => onFormChange('degree', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary">
+              {isEdit ? 'Update Teacher' : 'Add Teacher'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ----------------- Main AdminDashboard Component -----------------
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
@@ -19,19 +518,18 @@ const AdminDashboard = () => {
   // Modal states
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editingTeacher, setEditingTeacher] = useState(null);
   
   // Search state
   const [userSearchQuery, setUserSearchQuery] = useState("");
 
   // Form states
   const [studentForm, setStudentForm] = useState({
-    // Authentication table fields
     email: "",
     password: "",
     role: "student",
     full_name: "",
-
-    // Students data table fields
     name: "",
     dob_ad: "",
     dob_bs: "",
@@ -50,13 +548,10 @@ const AdminDashboard = () => {
   });
 
   const [teacherForm, setTeacherForm] = useState({
-    // Authentication table fields
     email: "",
     password: "",
     role: "teacher",
     full_name: "",
-
-    // Teachers data table fields
     name: "",
     designation: "",
     phone: "",
@@ -66,9 +561,22 @@ const AdminDashboard = () => {
   });
 
   const adminEmail = localStorage.getItem("adminEmail") || "Admin";
-
-  // ----------------- API Base URL -----------------
   const API_BASE = "http://localhost:5000";
+
+  // ----------------- Form Change Handlers -----------------
+  const handleStudentFormChange = (field, value) => {
+    setStudentForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleTeacherFormChange = (field, value) => {
+    setTeacherForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   // ----------------- Fetch Functions -----------------
   const fetchStats = async () => {
@@ -209,154 +717,269 @@ const AdminDashboard = () => {
     (teacher.designation && teacher.designation.toLowerCase().includes(userSearchQuery.toLowerCase()))
   );
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // ----------------- Document Management Handlers -----------------
+const handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    if (!file.name.endsWith(".md")) {
-      alert("Please upload only .md files");
-      return;
-    }
+  if (!file.name.endsWith(".md")) {
+    alert("Please upload only .md files");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file);
 
-    try {
-      const res = await fetch(`${API_BASE}/admin/documents/upload`, {
+  try {
+    const res = await fetch(`${API_BASE}/admin/documents/upload`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error("Upload failed");
+
+    const data = await res.json();
+    alert(`Document uploaded: ${data.message || "Success"}`);
+    fetchDocuments();
+  } catch (err) {
+    alert("Upload failed: " + err.message);
+  }
+};
+
+const deleteDocument = async (filename) => {
+  if (!window.confirm(`Delete ${filename}?`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/admin/documents/${filename}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) throw new Error("Delete failed");
+
+    alert("Document deleted successfully");
+    fetchDocuments();
+  } catch (err) {
+    alert("Delete failed: " + err.message);
+  }
+};
+
+const reprocessDocument = async (filename) => {
+  try {
+    const res = await fetch(
+      `${API_BASE}/admin/documents/${filename}/reprocess`,
+      {
         method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Upload failed");
-
-      const data = await res.json();
-      alert(`Document uploaded: ${data.message || "Success"}`);
-      fetchDocuments();
-    } catch (err) {
-      alert("Upload failed: " + err.message);
-    }
-  };
-
-  const deleteDocument = async (filename) => {
-    if (!window.confirm(`Delete ${filename}?`)) return;
-    try {
-      const res = await fetch(`${API_BASE}/admin/documents/${filename}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Delete failed");
-
-      alert("Document deleted successfully");
-      fetchDocuments();
-    } catch (err) {
-      alert("Delete failed: " + err.message);
-    }
-  };
-
-  const reprocessDocument = async (filename) => {
-    try {
-      const res = await fetch(
-        `${API_BASE}/admin/documents/${filename}/reprocess`,
-        {
-          method: "POST",
-        }
-      );
-
-      if (!res.ok) throw new Error("Reprocess failed");
-
-      alert("Reprocessing started");
-      fetchDocuments();
-    } catch (err) {
-      alert("Reprocess failed: " + err.message);
-    }
-  };
-
-  // ----------------- Student Management -----------------
-  const handleAddStudent = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE}/admin/students`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(studentForm),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to add student");
       }
+    );
 
-      const data = await res.json();
-      alert("Student added successfully! They can now login.");
+    if (!res.ok) throw new Error("Reprocess failed");
 
-      // Reset form and close modal
-      setStudentForm({
-        email: "",
-        password: "",
-        role: "student",
-        full_name: "",
-        name: "",
-        dob_ad: "",
-        dob_bs: "",
-        gender: "",
-        phone: "",
-        perm_address: "",
-        temp_address: "",
-        program: "",
-        batch: "",
-        section: "",
-        year_semester: "",
-        roll_no: "",
-        symbol_no: "",
-        registration_no: "",
-        joined_date: "",
-      });
-      setShowStudentModal(false);
-      fetchStudents();
-      fetchStats(); // Refresh stats
-    } catch (err) {
-      alert("Failed to add student: " + err.message);
+    alert("Reprocessing started");
+    fetchDocuments();
+  } catch (err) {
+    alert("Reprocess failed: " + err.message);
+  }
+};
+
+// ----------------- Student Management -----------------
+const handleAddStudent = async (e) => {
+  e.preventDefault();
+  try {
+    console.log('👤 Creating student:', studentForm.email);
+
+    // Send directly to backend - it will handle both auth and data creation
+    let res;
+    let url;
+    let method;
+
+    if (editingStudent) {
+      url = `${API_BASE}/admin/students/${editingStudent.id}`;
+      method = "PUT";
+    } else {
+      url = `${API_BASE}/admin/students`;
+      method = "POST";
     }
-  };
 
-  // ----------------- Teacher Management -----------------
-  const handleAddTeacher = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE}/admin/teachers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(teacherForm),
-      });
+    res = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(studentForm),
+    });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to add teacher");
+    console.log(`📡 Response status: ${res.status} ${res.statusText}`);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`❌ Server error response:`, errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { error: errorText || 'Unknown error' };
       }
-
-      const data = await res.json();
-      alert("Teacher added successfully! They can now login.");
-
-      // Reset form and close modal
-      setTeacherForm({
-        email: "",
-        password: "",
-        role: "teacher",
-        full_name: "",
-        name: "",
-        designation: "",
-        phone: "",
-        address: "",
-        degree: "",
-        subject: "",
-      });
-      setShowTeacherModal(false);
-      fetchTeachers();
-      fetchStats(); // Refresh stats
-    } catch (err) {
-      alert("Failed to add teacher: " + err.message);
+      throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
     }
+
+    const data = await res.json();
+    console.log(`✅ Success response:`, data);
+
+    alert(editingStudent ? "Student updated successfully!" : "Student added successfully! They can now login.");
+
+    // Reset form and close modal
+    setStudentForm({
+      email: "",
+      password: "",
+      role: "student",
+      full_name: "",
+      name: "",
+      dob_ad: "",
+      dob_bs: "",
+      gender: "",
+      phone: "",
+      perm_address: "",
+      temp_address: "",
+      program: "",
+      batch: "",
+      section: "",
+      year_semester: "",
+      roll_no: "",
+      symbol_no: "",
+      registration_no: "",
+      joined_date: "",
+    });
+    setShowStudentModal(false);
+    setEditingStudent(null);
+    fetchStudents();
+    fetchStats();
+  } catch (err) {
+    console.error(`💥 Error saving student:`, err);
+    alert(`Failed to save student: ${err.message}`);
+  }
+};
+
+// Update handleAddTeacher similarly
+const handleAddTeacher = async (e) => {
+  e.preventDefault();
+  try {
+    console.log('👤 Creating teacher:', teacherForm.email);
+
+    // Send directly to backend - it will handle both auth and data creation
+    let res;
+    let url;
+    let method;
+
+    if (editingTeacher) {
+      url = `${API_BASE}/admin/teachers/${editingTeacher.id}`;
+      method = "PUT";
+    } else {
+      url = `${API_BASE}/admin/teachers`;
+      method = "POST";
+    }
+
+    res = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(teacherForm),
+    });
+
+    console.log(`📡 Response status: ${res.status} ${res.statusText}`);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`❌ Server error response:`, errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { error: errorText || 'Unknown error' };
+      }
+      throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    console.log(`✅ Success response:`, data);
+
+    alert(editingTeacher ? "Teacher updated successfully!" : "Teacher added successfully! They can now login.");
+
+    // Reset form and close modal
+    setTeacherForm({
+      email: "",
+      password: "",
+      role: "teacher",
+      full_name: "",
+      name: "",
+      designation: "",
+      phone: "",
+      address: "",
+      degree: "",
+      subject: "",
+    });
+    setShowTeacherModal(false);
+    setEditingTeacher(null);
+    fetchTeachers();
+    fetchStats();
+  } catch (err) {
+    console.error(`💥 Error saving teacher:`, err);
+    alert(`Failed to save teacher: ${err.message}`);
+  }
+};
+
+// ----------------- Edit Handlers -----------------
+const handleEditStudent = (student) => {
+  setEditingStudent(student);
+  // Create a clean form data object without the id field
+  const formData = {
+    email: student.email,
+    password: "", // Don't show password when editing
+    role: "student",
+    full_name: student.full_name || student.name,
+    name: student.name,
+    dob_ad: student.dob_ad || "",
+    dob_bs: student.dob_bs || "",
+    gender: student.gender || "",
+    phone: student.phone || "",
+    perm_address: student.perm_address || "",
+    temp_address: student.temp_address || "",
+    program: student.program || "",
+    batch: student.batch || "",
+    section: student.section || "",
+    year_semester: student.year_semester || "",
+    roll_no: student.roll_no || "",
+    symbol_no: student.symbol_no || "",
+    registration_no: student.registration_no || "",
+    joined_date: student.joined_date || "",
   };
+  
+  console.log(`📝 Editing student:`, student);
+  console.log(`📝 Form data prepared:`, formData);
+  
+  setStudentForm(formData);
+  setShowStudentModal(true);
+};
+
+const handleEditTeacher = (teacher) => {
+  setEditingTeacher(teacher);
+  // Create a clean form data object without the id field
+  const formData = {
+    email: teacher.email,
+    password: "", // Don't show password when editing
+    role: "teacher",
+    full_name: teacher.full_name || teacher.name,
+    name: teacher.name,
+    designation: teacher.designation || "",
+    phone: teacher.phone || "",
+    address: teacher.address || "",
+    degree: teacher.degree || "",
+    subject: teacher.subject || "",
+  };
+  
+  console.log(`📝 Editing teacher:`, teacher);
+  console.log(`📝 Form data prepared:`, formData);
+  
+  setTeacherForm(formData);
+  setShowTeacherModal(true);
+};
 
   const handleDeleteStudent = async (id) => {
     if (!window.confirm("Delete this student?")) return;
@@ -390,6 +1013,50 @@ const AdminDashboard = () => {
     }
   };
 
+  // Reset modals when closed
+  const handleCloseStudentModal = () => {
+    setShowStudentModal(false);
+    setEditingStudent(null);
+    setStudentForm({
+      email: "",
+      password: "",
+      role: "student",
+      full_name: "",
+      name: "",
+      dob_ad: "",
+      dob_bs: "",
+      gender: "",
+      phone: "",
+      perm_address: "",
+      temp_address: "",
+      program: "",
+      batch: "",
+      section: "",
+      year_semester: "",
+      roll_no: "",
+      symbol_no: "",
+      registration_no: "",
+      joined_date: "",
+    });
+  };
+
+  const handleCloseTeacherModal = () => {
+    setShowTeacherModal(false);
+    setEditingTeacher(null);
+    setTeacherForm({
+      email: "",
+      password: "",
+      role: "teacher",
+      full_name: "",
+      name: "",
+      designation: "",
+      phone: "",
+      address: "",
+      degree: "",
+      subject: "",
+    });
+  };
+
   // ----------------- Loading -----------------
   if (loading)
     return (
@@ -398,441 +1065,6 @@ const AdminDashboard = () => {
         <p>Loading admin dashboard...</p>
       </div>
     );
-
-  // ----------------- Modal Components -----------------
-  const StudentModal = () => (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h3>Add New Student</h3>
-          <button
-            className="close-btn"
-            onClick={() => setShowStudentModal(false)}
-          >
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleAddStudent} className="modal-form">
-          <div className="form-section">
-            <h4>Login Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Full Name *</label>
-                <input
-                  type="text"
-                  value={studentForm.full_name}
-                  onChange={(e) =>
-                    setStudentForm({
-                      ...studentForm,
-                      full_name: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Email *</label>
-                <input
-                  type="email"
-                  value={studentForm.email}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, email: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Password *</label>
-                <input
-                  type="password"
-                  value={studentForm.password}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, password: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h4>Personal Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Name (as in records) *</label>
-                <input
-                  type="text"
-                  value={studentForm.name}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Gender</label>
-                <select
-                  value={studentForm.gender}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, gender: e.target.value })
-                  }
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>DOB (A.D.)</label>
-                <input
-                  type="date"
-                  value={studentForm.dob_ad}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, dob_ad: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label>DOB (B.S.)</label>
-                <input
-                  type="text"
-                  placeholder="YYYY-MM-DD"
-                  value={studentForm.dob_bs}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, dob_bs: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Phone</label>
-                <input
-                  type="tel"
-                  value={studentForm.phone}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, phone: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h4>Address Information</h4>
-            <div className="form-row">
-              <div className="form-group full-width">
-                <label>Permanent Address</label>
-                <textarea
-                  value={studentForm.perm_address}
-                  onChange={(e) =>
-                    setStudentForm({
-                      ...studentForm,
-                      perm_address: e.target.value,
-                    })
-                  }
-                  rows="3"
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group full-width">
-                <label>Temporary Address</label>
-                <textarea
-                  value={studentForm.temp_address}
-                  onChange={(e) =>
-                    setStudentForm({
-                      ...studentForm,
-                      temp_address: e.target.value,
-                    })
-                  }
-                  rows="3"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h4>Academic Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Program *</label>
-                <input
-                  type="text"
-                  value={studentForm.program}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, program: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Batch</label>
-                <input
-                  type="text"
-                  value={studentForm.batch}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, batch: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Section</label>
-                <input
-                  type="text"
-                  value={studentForm.section}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, section: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label>Year/Semester</label>
-                <input
-                  type="text"
-                  value={studentForm.year_semester}
-                  onChange={(e) =>
-                    setStudentForm({
-                      ...studentForm,
-                      year_semester: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Roll No. *</label>
-                <input
-                  type="text"
-                  value={studentForm.roll_no}
-                  onChange={(e) =>
-                    setStudentForm({ ...studentForm, roll_no: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Symbol No.</label>
-                <input
-                  type="text"
-                  value={studentForm.symbol_no}
-                  onChange={(e) =>
-                    setStudentForm({
-                      ...studentForm,
-                      symbol_no: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Registration No.</label>
-                <input
-                  type="text"
-                  value={studentForm.registration_no}
-                  onChange={(e) =>
-                    setStudentForm({
-                      ...studentForm,
-                      registration_no: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label>Joined Date</label>
-                <input
-                  type="date"
-                  value={studentForm.joined_date}
-                  onChange={(e) =>
-                    setStudentForm({
-                      ...studentForm,
-                      joined_date: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="modal-actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setShowStudentModal(false)}
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary">
-              Add Student
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
-  const TeacherModal = () => (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h3>Add New Teacher</h3>
-          <button
-            className="close-btn"
-            onClick={() => setShowTeacherModal(false)}
-          >
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleAddTeacher} className="modal-form">
-          <div className="form-section">
-            <h4>Login Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Full Name *</label>
-                <input
-                  type="text"
-                  value={teacherForm.full_name}
-                  onChange={(e) =>
-                    setTeacherForm({
-                      ...teacherForm,
-                      full_name: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Email *</label>
-                <input
-                  type="email"
-                  value={teacherForm.email}
-                  onChange={(e) =>
-                    setTeacherForm({ ...teacherForm, email: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Password *</label>
-                <input
-                  type="password"
-                  value={teacherForm.password}
-                  onChange={(e) =>
-                    setTeacherForm({ ...teacherForm, password: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h4>Professional Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Name (as in records) *</label>
-                <input
-                  type="text"
-                  value={teacherForm.name}
-                  onChange={(e) =>
-                    setTeacherForm({ ...teacherForm, name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Designation *</label>
-                <input
-                  type="text"
-                  value={teacherForm.designation}
-                  onChange={(e) =>
-                    setTeacherForm({
-                      ...teacherForm,
-                      designation: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Phone</label>
-                <input
-                  type="tel"
-                  value={teacherForm.phone}
-                  onChange={(e) =>
-                    setTeacherForm({ ...teacherForm, phone: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label>Subject *</label>
-                <input
-                  type="text"
-                  value={teacherForm.subject}
-                  onChange={(e) =>
-                    setTeacherForm({ ...teacherForm, subject: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group full-width">
-                <label>Address</label>
-                <textarea
-                  value={teacherForm.address}
-                  onChange={(e) =>
-                    setTeacherForm({ ...teacherForm, address: e.target.value })
-                  }
-                  rows="3"
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group full-width">
-                <label>Degree/Qualification</label>
-                <input
-                  type="text"
-                  value={teacherForm.degree}
-                  onChange={(e) =>
-                    setTeacherForm({ ...teacherForm, degree: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="modal-actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setShowTeacherModal(false)}
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary">
-              Add Teacher
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
 
   // ----------------- JSX -----------------
  return (
@@ -1100,12 +1332,20 @@ const AdminDashboard = () => {
                           <p><strong>Program:</strong> {student.program}</p>
                           <p><strong>Batch:</strong> {student.batch}</p>
                         </div>
-                        <button 
-                          className="btn-danger"
-                          onClick={() => handleDeleteStudent(student.id)}
-                        >
-                          Delete
-                        </button>
+                        <div className="user-actions">
+                          <button 
+                            className="btn-edit"
+                            onClick={() => handleEditStudent(student)}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            className="btn-danger"
+                            onClick={() => handleDeleteStudent(student.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1129,12 +1369,20 @@ const AdminDashboard = () => {
                           <p><strong>Designation:</strong> {teacher.designation}</p>
                           
                         </div>
-                        <button 
-                          className="btn-danger"
-                          onClick={() => handleDeleteTeacher(teacher.id)}
-                        >
-                          Delete
-                        </button>
+                        <div className="user-actions">
+                          <button 
+                            className="btn-edit"
+                            onClick={() => handleEditTeacher(teacher)}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            className="btn-danger"
+                            onClick={() => handleDeleteTeacher(teacher.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1146,8 +1394,25 @@ const AdminDashboard = () => {
       </main>
 
       {/* Modals */}
-      {showStudentModal && <StudentModal />}
-      {showTeacherModal && <TeacherModal />}
+      <StudentModal 
+        show={showStudentModal}
+        onClose={handleCloseStudentModal}
+        formData={studentForm}
+        onFormChange={handleStudentFormChange}
+        onSubmit={handleAddStudent}
+        isEdit={!!editingStudent}
+        editId={editingStudent?.id}
+      />
+      
+      <TeacherModal 
+        show={showTeacherModal}
+        onClose={handleCloseTeacherModal}
+        formData={teacherForm}
+        onFormChange={handleTeacherFormChange}
+        onSubmit={handleAddTeacher}
+        isEdit={!!editingTeacher}
+        editId={editingTeacher?.id}
+      />
     </div>
   );
 };
