@@ -83,57 +83,79 @@ class CollegeQuerySystem:
             }
         }
 
+        # Define institutional roles that should be treated as document queries
+        self.institutional_roles = [
+            "principal", "vice principal", "director", "vice director",
+            "chairman", "vice chairman", "dean", "head", "coordinator",
+            "registrar", "controller", "chief", "president", "secretary"
+        ]
+
+    def _is_institutional_query(self, question):
+        """Check if query is about institutional roles (from documents, not database)"""
+        q_lower = question.lower()
+        
+        # Check for institutional role keywords
+        if any(role in q_lower for role in self.institutional_roles):
+            # Exclude specific person queries that want contact details
+            exclude_patterns = ["email of", "phone of", "contact of", "address of"]
+            if not any(pattern in q_lower for pattern in exclude_patterns):
+                return True
+        
+        return False
+
     def _check_data_access(self, question, user_role="guest", user_data=None):
         """Check if the current user has access to the requested data"""
         q_lower = question.lower()
         
-        # Guest access restrictions - ONLY apply if user is actually a guest
+        # FIRST: Check if this is an institutional query (always allowed)
+        if self._is_institutional_query(question):
+            return True, None
+        
+        # Guest access restrictions
         if user_role == "guest":
+            # Check if asking for specific person's detailed info
             restricted_patterns = [
-                "email", "phone", "contact", "address", "roll no", "roll number",
-                "symbol number", "registration number", "dob", "date of birth",
-                "birthday", "gender", "batch", "section", "joined", "admission"
+                "email of", "phone of", "contact of", "address of", 
+                "roll no", "roll number", "symbol number", "registration number", 
+                "dob of", "date of birth of", "birthday of", "gender of",
+                "batch of", "section of", "joined"
             ]
             
-            # Check if question contains any restricted patterns
             has_restricted = any(pattern in q_lower for pattern in restricted_patterns)
             
-            # Check if it's specifically asking about a person (who is, information about, etc.)
+            # Check if asking about a specific person (not institutional role)
             person_queries = ["who is", "information about", "details about", "tell me about"]
             is_person_query = any(query in q_lower for query in person_queries)
             
-            # If it contains restricted patterns OR is asking about a specific person
-            if has_restricted or is_person_query:
-                return False, "Guest users can only access general college information like programs, courses, and facilities. Please log in for detailed personal data."
+            # Extract potential name
+            name = self._extract_person_name(question)
+            
+            # If it's asking for restricted info about a specific person
+            if (has_restricted or (is_person_query and name)) and not self._is_institutional_query(question):
+                return False, "Hmm, I can't share personal details like that without login. But I'd be happy to tell you about our programs, courses, or facilities!"
         
-        # Student access restrictions - ONLY for student role
+        # Student access restrictions
         elif user_role == "student" and user_data:
-            # Extract person name from question
             name = self._extract_person_name(question)
             if name:
-                # Students can access their own data and teacher data
                 student_name = user_data.get('name', '').lower() if user_data else ''
                 searched_name = name.lower()
                 
-                # Allow access to own data
+                # Allow own data
                 if student_name and searched_name in student_name:
                     return True, None
                 
-                # Allow access to teacher data
+                # Allow teacher data
                 teacher_data = self._search_person(name)
                 if teacher_data and teacher_data["type"] == "teacher":
                     return True, None
                 
-                # Deny access to other student data
+                # Deny other student data
                 student_data = self._search_person(name)
                 if student_data and student_data["type"] == "student":
-                    return False, "Students can only access their own information and teacher details. You cannot view other students' personal information."
+                    return False, "I can only share your own information or teacher details. For privacy reasons, I can't show you other students' personal data."
         
         # Teachers and admins have full access
-        elif user_role in ["teacher", "admin"]:
-            return True, None
-        
-        # ALLOW access for authenticated users (student, teacher, admin) for general queries
         return True, None
 
     def _query_supabase(self, table, params=None):
@@ -159,8 +181,12 @@ class CollegeQuerySystem:
             return []
 
     def _extract_person_name(self, question):
-        """Extract person name from various question formats - IMPROVED"""
+        """Extract person name from various question formats"""
         q_lower = question.lower().strip()
+        
+        # Skip if institutional query
+        if self._is_institutional_query(question):
+            return None
         
         patterns_to_remove = [
             r'give\s+me\s+',
@@ -178,8 +204,8 @@ class CollegeQuerySystem:
             r'phone\s+number\s+of\s+',
             r'phone\s+of\s+',
             r'contact\s+of\s+',
-            r'contact\s+detail\s+of\s+',  # ADDED: handle "contact detail of"
-            r'contact\s+details\s+of\s+', # ADDED: handle "contact details of"
+            r'contact\s+detail\s+of\s+',
+            r'contact\s+details\s+of\s+',
             r'address\s+of\s+',
             r'roll\s+no\s+of\s+',
             r'roll\s+number\s+of\s+',
@@ -232,7 +258,7 @@ class CollegeQuerySystem:
         return None
 
     def _get_person_info(self, person_data):
-        """Get formatted information about a person in human-like sentences"""
+        """Get formatted information about a person in natural, flowing sentences"""
         if person_data["type"] == "student":
             s = person_data["data"]
             name = _safe(s.get('name'))
@@ -254,54 +280,47 @@ class CollegeQuerySystem:
             temp_address = _safe(s.get('temp_address'))
             joined_date = _safe(s.get('joined_date'))
             
-            sentences = [f"{name} is a student at Samriddhi College."]
+            # Build natural response
+            intro = f"{name} is studying at Samriddhi College"
             
             if program != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} is enrolled in the {program} program.")
+                intro += f", enrolled in the {program} program"
             
-            if batch != "N/A" and section != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} is in batch {batch}, section {section}.")
-            elif batch != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} is in batch {batch}.")
-            elif section != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} is in section {section}.")
+            if batch != "N/A" or section != "N/A":
+                details = []
+                if batch != "N/A":
+                    details.append(f"batch {batch}")
+                if section != "N/A":
+                    details.append(f"section {section}")
+                intro += f" ({', '.join(details)})"
+            
+            intro += "."
+            
+            # Add additional details naturally
+            extra_info = []
             
             if year_semester != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} is currently in {year_semester}.")
+                extra_info.append(f"{pronouns['subject'].capitalize()}'s currently in {year_semester}")
             
             if roll_no != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} roll number is {roll_no}.")
+                extra_info.append(f"roll number {roll_no}")
             
-            if symbol_no != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} symbol number is {symbol_no}.")
-            
-            if registration_no != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} registration number is {registration_no}.")
-            
+            contact_parts = []
             if email != "N/A":
-                sentences.append(f"You can contact {pronouns['object']} at {email}.")
-            
+                contact_parts.append(f"email at {email}")
             if phone != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} phone number is {phone}.")
+                contact_parts.append(f"call at {phone}")
             
-            if dob_ad != "N/A" and dob_bs != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} date of birth is {dob_ad} (AD) / {dob_bs} (BS).")
-            elif dob_ad != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} date of birth is {dob_ad}.")
-            elif dob_bs != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} date of birth is {dob_bs} (BS).")
+            if contact_parts:
+                extra_info.append(f"you can reach {pronouns['object']} via {' or '.join(contact_parts)}")
             
-            if perm_address != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} permanent address is {perm_address}.")
+            response = intro
+            if extra_info:
+                response += " " + ", and ".join(extra_info) + "."
             
-            if temp_address != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} temporary address is {temp_address}.")
+            return response
             
-            if joined_date != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} joined the college on {joined_date}.")
-            
-            return " ".join(sentences)
-        else:
+        else:  # teacher
             t = person_data["data"]
             name = _safe(t.get('name'))
             gender = t.get('gender')
@@ -312,42 +331,46 @@ class CollegeQuerySystem:
             degree = _safe(t.get('degree'))
             email = _safe(t.get('email'))
             phone = _safe(t.get('phone'))
-            address = _safe(t.get('address'))
             
-            sentences = [f"{name} is a {designation.lower()} at Samriddhi College."]
+            intro = f"{name} is a {designation.lower()} at Samriddhi College"
             
             if subject != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} teaches {subject}.")
+                intro += f", teaching {subject}"
+            
+            intro += "."
+            
+            extra_info = []
             
             if degree != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} holds a {degree} degree.")
+                extra_info.append(f"{pronouns['subject']} holds a {degree} degree")
             
+            contact_parts = []
             if email != "N/A":
-                sentences.append(f"{pronouns['possessive_adj'].capitalize()} email address is {email}.")
-            
+                contact_parts.append(f"email at {email}")
             if phone != "N/A":
-                sentences.append(f"You can reach {pronouns['object']} at {phone}.")
+                contact_parts.append(f"call at {phone}")
             
-            if address != "N/A":
-                sentences.append(f"{pronouns['subject'].capitalize()} resides at {address}.")
+            if contact_parts:
+                extra_info.append(f"you can contact {pronouns['object']} via {' or '.join(contact_parts)}")
             
-            return " ".join(sentences)
+            response = intro
+            if extra_info:
+                response += " " + ", and ".join(extra_info) + "."
+            
+            return response
 
     def _handle_specific_field_query(self, question, person_data):
-        """Handle queries asking for specific fields"""
+        """Handle queries asking for specific fields with natural language"""
         q_lower = question.lower()
         data = person_data["data"]
         name = data.get('name', 'Unknown')
         
         if person_data["type"] == "student":
-            gender = data.get('gender')
-            pronouns = _get_pronouns(gender)
-            
             if "email" in q_lower:
                 email = data.get("email")
                 if email and email != "N/A":
-                    return f"The email address for {name} is {email}."
-                return f"I don't have email information for {name}."
+                    return f"You can reach {name} at {email}."
+                return f"Sorry, I don't have an email address for {name}."
             
             if "phone" in q_lower or "contact number" in q_lower or "mobile" in q_lower:
                 phone = data.get("phone")
@@ -358,117 +381,33 @@ class CollegeQuerySystem:
             if "roll no" in q_lower or "roll number" in q_lower:
                 roll_no = data.get("roll_no")
                 if roll_no and roll_no != "N/A":
-                    return f"The roll number for {name} is {roll_no}."
-                return f"I don't have roll number information for {name}."
-            
-            if "symbol" in q_lower and "number" in q_lower:
-                symbol_no = data.get("symbol_no")
-                if symbol_no and symbol_no != "N/A":
-                    return f"{name}'s symbol number is {symbol_no}."
-                return f"I don't have symbol number information for {name}."
-            
-            if "registration" in q_lower and "number" in q_lower:
-                reg_no = data.get("registration_no")
-                if reg_no and reg_no != "N/A":
-                    return f"{name}'s registration number is {reg_no}."
-                return f"I don't have registration number information for {name}."
+                    return f"{name}'s roll number is {roll_no}."
+                return f"I don't have roll number details for {name}."
             
             if any(word in q_lower for word in ["program", "studying", "study", "course"]):
                 program = data.get("program")
                 if program and program != "N/A":
                     return f"{name} is studying {program}."
-                return f"I don't have program information for {name}."
+                return f"I'm not sure what program {name} is in."
             
-            if "batch" in q_lower or "section" in q_lower:
-                batch = data.get("batch")
-                section = data.get("section")
-                parts = []
-                if batch and batch != "N/A":
-                    parts.append(f"batch {batch}")
-                if section and section != "N/A":
-                    parts.append(f"section {section}")
-                if parts:
-                    return f"{name} is in {' and '.join(parts)}."
-                return f"I don't have batch/section information for {name}."
-            
-            if any(word in q_lower for word in ["dob", "date of birth", "birthday", "born"]):
-                dob_ad = data.get("dob_ad")
-                dob_bs = data.get("dob_bs")
-                if dob_ad and dob_ad != "N/A":
-                    if dob_bs and dob_bs != "N/A":
-                        return f"{name}'s date of birth is {dob_ad} (AD) or {dob_bs} (BS)."
-                    return f"{name}'s date of birth is {dob_ad}."
-                elif dob_bs and dob_bs != "N/A":
-                    return f"{name}'s date of birth is {dob_bs} (BS)."
-                return f"I don't have date of birth information for {name}."
-            
-            if "gender" in q_lower or "boy" in q_lower or "girl" in q_lower or "male" in q_lower or "female" in q_lower:
-                gender_val = data.get("gender")
-                if gender_val and gender_val != "N/A":
-                    return f"{name} is {gender_val.lower()}."
-                return f"I don't have gender information for {name}."
-            
-            if "address" in q_lower:
-                if "permanent" in q_lower:
-                    perm_addr = data.get("perm_address")
-                    if perm_addr and perm_addr != "N/A":
-                        return f"{name}'s permanent address is {perm_addr}."
-                    return f"I don't have permanent address information for {name}."
-                elif "temporary" in q_lower or "temp" in q_lower:
-                    temp_addr = data.get("temp_address")
-                    if temp_addr and temp_addr != "N/A":
-                        return f"{name}'s temporary address is {temp_addr}."
-                    return f"I don't have temporary address information for {name}."
-                else:
-                    perm_addr = data.get("perm_address")
-                    temp_addr = data.get("temp_address")
-                    if perm_addr and perm_addr != "N/A":
-                        return f"{name}'s permanent address is {perm_addr}."
-                    elif temp_addr and temp_addr != "N/A":
-                        return f"{name}'s temporary address is {temp_addr}."
-                    return f"I don't have address information for {name}."
-            
-            if "joined" in q_lower or "join date" in q_lower or "admission date" in q_lower:
-                joined = data.get("joined_date")
-                if joined and joined != "N/A":
-                    return f"{name} joined the college on {joined}."
-                return f"I don't have joining date information for {name}."
-        else:
+        else:  # teacher
             if "email" in q_lower:
                 email = data.get("email")
                 if email and email != "N/A":
-                    return f"The email address for {name} is {email}."
-                return f"I don't have email information for {name}."
+                    return f"You can email {name} at {email}."
+                return f"Sorry, I don't have an email for {name}."
             
-            if "phone" in q_lower or "contact" in q_lower or "mobile" in q_lower:
+            if "phone" in q_lower or "contact" in q_lower:
                 phone = data.get("phone")
                 if phone and phone != "N/A":
                     return f"{name}'s phone number is {phone}."
-                return f"I don't have phone information for {name}."
-            
-            if "address" in q_lower:
-                address = data.get("address")
-                if address and address != "N/A":
-                    return f"{name} resides at {address}."
-                return f"I don't have address information for {name}."
+                return f"I don't have contact information for {name}."
             
             if "teach" in q_lower or "subject" in q_lower:
                 subject = data.get("subject")
                 if subject and subject != "N/A":
                     return f"{name} teaches {subject}."
-                return f"I don't have subject information for {name}."
-            
-            if "degree" in q_lower or "qualification" in q_lower or "education" in q_lower:
-                degree = data.get("degree")
-                if degree and degree != "N/A":
-                    return f"{name} holds a {degree} degree."
-                return f"I don't have degree information for {name}."
-            
-            if "designation" in q_lower or "position" in q_lower or "role" in q_lower:
-                designation = data.get("designation")
-                if designation and designation != "N/A":
-                    return f"{name} is a {designation.lower()} at Samriddhi College."
-                return f"I don't have designation information for {name}."
+                return f"I'm not sure what {name} teaches."
         
         return None
 
@@ -478,11 +417,11 @@ class CollegeQuerySystem:
         if not name:
             return None
             
-        print(f"🔍 Searching for person: '{name}'")
+        print(f"🔍 Looking up: '{name}'")
         
         person_data = self._search_person(name)
         if not person_data:
-            return f"I couldn't find anyone named {name.title()} in our records. Could you check the spelling or provide more details?"
+            return f"Hmm, I couldn't find anyone named {name.title()} in our database. Could you double-check the spelling?"
         
         specific_response = self._handle_specific_field_query(question, person_data)
         if specific_response:
@@ -499,31 +438,25 @@ class CollegeQuerySystem:
             subject = q_lower.split("who teaches")[1].strip(" ?.")
         elif "who is teaching" in q_lower:
             subject = q_lower.split("who is teaching")[1].strip(" ?.")
-        elif "teaches" in q_lower:
-            subject = q_lower.split("teaches")[1].strip(" ?.")
         
         if not subject:
             return None
             
-        print(f"🔍 Searching for teacher of subject: '{subject}'")
+        print(f"🔍 Finding teacher for: '{subject}'")
         
         teachers = self._query_supabase("teachers_data", params={"subject": f"ilike.%{subject}%"})
         
         if not teachers:
-            return f"I couldn't find information about who teaches {subject}. The subject might be taught by multiple faculty members or the information might not be available in our database."
+            return f"I couldn't find information about who teaches {subject}. It might not be in our database yet."
 
-        parts = []
-        for t in teachers:
+        if len(teachers) == 1:
+            t = teachers[0]
             name = _safe(t.get('name'))
             designation = _safe(t.get('designation'))
-            parts.append(f"{name} ({designation})")
-            
-        if len(parts) == 1:
-            return f"{parts[0]} teaches {subject}."
-        elif len(parts) > 1:
-            return f"{', '.join(parts[:-1])} and {parts[-1]} teach {subject}."
-        
-        return None
+            return f"{name}, who's a {designation.lower()}, teaches {subject}."
+        else:
+            names = [f"{_safe(t.get('name'))}" for t in teachers]
+            return f"{', '.join(names[:-1])} and {names[-1]} teach {subject}."
 
     def _is_student_list_query(self, question):
         """Check if this is specifically a student list query"""
@@ -553,7 +486,7 @@ class CollegeQuerySystem:
         return None
 
     def _handle_student_list_query(self, question):
-        """Handle ONLY explicit student list queries with section filtering"""
+        """Handle student list queries"""
         if not self._is_student_list_query(question):
             return None
             
@@ -578,42 +511,27 @@ class CollegeQuerySystem:
             students = self._query_supabase("students_data", params=params)
             
             if section and students:
-                section_students = []
-                for student in students:
-                    student_section = student.get('section', '').upper()
-                    if student_section == section:
-                        section_students.append(student)
-                students = section_students
+                students = [s for s in students if s.get('section', '').upper() == section]
 
             if students:
                 program_name = self.programs[program_match]["name"]
                 sample_names = _sample_names(students, 10)
                 
-                if batch and section:
-                    response = f"I found {len(students)} students in {program_name}, batch {batch}, section {section}:\n\n"
-                elif batch:
-                    response = f"I found {len(students)} students in {program_name}, batch {batch}:\n\n"
-                elif section:
-                    response = f"I found {len(students)} students in {program_name}, section {section}:\n\n"
-                else:
-                    response = f"I found {len(students)} students in the {program_name} program:\n\n"
+                filters = []
+                if batch:
+                    filters.append(f"batch {batch}")
+                if section:
+                    filters.append(f"section {section}")
                 
+                filter_text = f" ({', '.join(filters)})" if filters else ""
+                
+                response = f"Found {len(students)} students in {program_name}{filter_text}:\n\n"
                 response += "\n".join([f"• {name}" for name in sample_names])
                 
                 if len(students) > 10:
-                    response += f"\n\n... and {len(students) - 10} more students"
+                    response += f"\n\n...and {len(students) - 10} more"
                 
                 return response
-            else:
-                program_name = self.programs[program_match]["name"]
-                if batch and section:
-                    return f"I couldn't find any students in {program_name}, batch {batch}, section {section}."
-                elif batch:
-                    return f"I couldn't find any students in {program_name}, batch {batch}."
-                elif section:
-                    return f"I couldn't find any students in {program_name}, section {section}."
-                else:
-                    return f"I couldn't find any students in the {program_name} program."
         
         return None
 
@@ -665,18 +583,10 @@ class CollegeQuerySystem:
             raw_context = "\n\n".join([doc.page_content for doc in docs])
             return self._clean_table_formatting(raw_context)
 
-        general_terms = ["samriddhi", "college", "principal", "director", "chairman"]
-        for term in general_terms:
-            if term in question.lower():
-                docs = vectordb.similarity_search(term, k=k)
-                if docs:
-                    raw_context = "\n\n".join([doc.page_content for doc in docs])
-                    return self._clean_table_formatting(raw_context)
-
         return ""
 
     def _extract_courses_directly(self, context, semester):
-        """Directly extract courses from table data and reformat"""
+        """Directly extract courses from table data"""
         courses = []
         current_semester = False
 
@@ -715,7 +625,7 @@ class CollegeQuerySystem:
 
         semester = "1"
         words = question.split()
-        for i, word in enumerate(words):
+        for word in words:
             if word.isdigit() and 1 <= int(word) <= 8:
                 semester = word
                 break
@@ -723,62 +633,26 @@ class CollegeQuerySystem:
                 semester = "1"
             elif word.lower() in ["second", "2nd"]:
                 semester = "2"
-            elif word.lower() in ["third", "3rd"]:
-                semester = "3"
-            elif word.lower() in ["fourth", "4th", "forth"]:
-                semester = "4"
 
         courses = self._extract_courses_directly(context, semester)
 
         if courses:
             return (
                 f"Here are the courses for {program_data['name']}, Semester {semester}:\n\n" +
-                '\n'.join(courses) +
-                f"\n\n(Source: {program_data['keywords'][0].upper()} curriculum document)"
+                '\n'.join(courses)
             )
 
-        prompt_template = """You are a helpful assistant that extracts course information from college documents.
-
-Context from college documents:
-{context}
-
-Question: {question}
-
-Instructions:
-1. Extract course information from any tables or text
-2. Present the information in a clear, bullet-point list format
-3. Include course names, codes, and credit hours when available
-4. Do NOT maintain the original table format
-5. Make the response easy to read
-
-Provide the course information as a well-formatted list:
-"""
-        prompt = ChatPromptTemplate.from_template(prompt_template)
-
-        chain = prompt | ChatGroq(
-            temperature=0.2,
-            model_name="llama-3.3-70b-versatile",
-            groq_api_key=os.getenv("GROQ_API_KEY")
-        ) | StrOutputParser()
-
-        response = chain.invoke({
-            "program": program_data['name'],
-            "semester": semester,
-            "context": context,
-            "question": question
-        })
-
-        return response + f"\n\n(Source: {program_data['keywords'][0].upper()} document)"
+        return f"Sorry, I couldn't find the course list for semester {semester}. The information might not be available yet."
 
     def _handle_program_queries(self, question, program_data):
-        """Handle program-specific queries with natural responses"""
+        """Handle program-specific queries"""
         q_lower = question.lower()
         
         if "how many semesters" in q_lower or ("semester" in q_lower and "how many" in q_lower):
             return f"The {program_data['name']} program runs for {program_data['duration']}."
 
         if "how many seats" in q_lower or "seat capacity" in q_lower or "intake" in q_lower:
-            return f"The {program_data['name']} program has {program_data['seats']} seats available."
+            return f"We have {program_data['seats']} seats available for {program_data['name']}."
 
         course_keywords = ["courses in semester", "list of courses", "course structure",
                           "subjects in", "curriculum", "syllabus", "semester courses"]
@@ -788,168 +662,137 @@ Provide the course information as a well-formatted list:
         return None
 
     def _classify_query_type(self, question):
-        """Classify the query type to ensure proper routing"""
+        """Improved query classification"""
         q_lower = question.lower()
         
-        teacher_phrases = ["who teaches", "who is teaching"]
-        if any(phrase in q_lower for phrase in teacher_phrases):
-            if not any(p in q_lower for p in ["who is", "tell me about", "information about"]):
-                return "teacher_subject"
+        # FIRST: Check institutional queries (principal, director, etc.)
+        if self._is_institutional_query(question):
+            return "document"
         
-        person_trigger_phrases = [
-            "who is", "tell me about", "information about", "details about",
-            "email of", "email for", "phone of", "phone number of", "contact of",
-            "address of", "roll no of", "roll number of", "symbol number of",
-            "registration number of", "dob of", "date of birth of", "birthday of",
-            "age of", "gender of", "batch of", "section of", "when did", "when is the", "joined",
-            "give me", "tell me", "show me", "what is the"
+        # Check for "who teaches X" - NOT "who is X"
+        if ("who teaches" in q_lower or "who is teaching" in q_lower) and "who is" not in q_lower:
+            return "teacher_subject"
+        
+        # Check for specific person database queries
+        person_field_keywords = [
+            "email of", "phone of", "contact of", "address of",
+            "roll no", "roll number", "symbol", "registration",
+            "dob of", "birthday of", "gender of", "batch of", "section of"
         ]
         
-        has_person_trigger = any(phrase in q_lower for phrase in person_trigger_phrases)
+        if any(keyword in q_lower for keyword in person_field_keywords):
+            return "person"
         
-        name = self._extract_person_name(question)
-        
-        if name and len(name) > 1:
-            person_field_keywords = [
-                "email", "phone", "address", "roll no", "roll number", "symbol", "registration",
-                "dob", "birthday", "gender", "batch", "section", "program", "studying",
-                "study", "joined", "join date", "admission date", "contact", "mobile"
-            ]
-            
-            if has_person_trigger or any(keyword in q_lower for keyword in person_field_keywords):
+        # Check for "who is" + person name (not institutional)
+        if "who is" in q_lower:
+            name = self._extract_person_name(question)
+            if name and len(name) > 1:
                 return "person"
         
-        if not has_person_trigger and not name:
-            program_queries = [
-                "how many semesters", "duration", "course", "curriculum",
-                "syllabus", "credit", "admission", "eligibility",
-                "fee", "career", "opportunity", "faculty", "facilities"
-            ]
-            if any(phrase in q_lower for phrase in program_queries):
-                return "program_info"
-        
+        # Student list queries
         if self._is_student_list_query(question):
             return "student_list"
         
+        # Student count queries
         count_queries = ["how many students", "number of students", "total students"]
         if any(phrase in q_lower for phrase in count_queries):
             return "student_count"
         
+        # Program-specific queries
+        program_queries = [
+            "how many semesters", "duration", "course", "curriculum",
+            "syllabus", "seats", "admission", "eligibility"
+        ]
+        if any(phrase in q_lower for phrase in program_queries):
+            return "program_info"
+        
+        # Default to document query
         return "document"
 
-    
-
     def generate_response(self, question, user_role="guest", user_data=None):
+        """Main response generation with improved flow"""
         q_lower = question.lower().strip()
         print(f"🧠 Processing: '{question}'")
         print(f"👤 User role: {user_role}")
+        
         query_type = self._classify_query_type(question)
-        print(f"📊 Query classified as: {query_type}")
+        print(f"📊 Query type: {query_type}")
 
-        # ADD THIS ACCESS CHECK AT THE BEGINNING
+        # Check access permissions
         has_access, error_message = self._check_data_access(question, user_role, user_data)
         if not has_access:
             return error_message
 
+        # Route to appropriate handler
         if query_type == "person":
-            person_response = self._handle_person_query(question)
-            if person_response:
-                return person_response
+            response = self._handle_person_query(question)
+            if response:
+                return response
 
         elif query_type == "teacher_subject":
-            teacher_response = self._handle_teacher_subject_query(question)
-            if teacher_response:
-                return teacher_response
+            response = self._handle_teacher_subject_query(question)
+            if response:
+                return response
 
         elif query_type == "program_info":
             program, program_data = self.detect_program(question)
             if program_data:
-                program_response = self._handle_program_queries(question, program_data)
-                if program_response:
-                    return program_response
+                response = self._handle_program_queries(question, program_data)
+                if response:
+                    return response
 
         elif query_type == "student_list":
-            student_list_response = self._handle_student_list_query(question)
-            if student_list_response:
-                return student_list_response
+            response = self._handle_student_list_query(question)
+            if response:
+                return response
 
         elif query_type == "student_count":
+            # Handle student count queries
             program_match = None
             for program, data in self.programs.items():
                 if any(kw in q_lower for kw in data["keywords"]):
                     program_match = program
                     break
             
-            batch_match = re.search(r'\b(20\d{2}[-]?[A-Z0-9]*)\b', q_lower)
-            batch = batch_match.group(0) if batch_match else None
-            
-            section = self._extract_section_from_query(question)
-            
             if program_match:
                 params = {"program": f"ilike.%{program_match.upper()}%"}
-                if batch:
-                    params["batch"] = f"ilike.%{batch}%"
-                    
                 students = self._query_supabase("students_data", params=params)
                 
-                if section and students:
-                    section_students = []
-                    for student in students:
-                        student_section = student.get('section', '').upper()
-                        if student_section == section:
-                            section_students.append(student)
-                    students = section_students
-
                 if students:
                     program_name = self.programs[program_match]["name"]
-                    if batch and section:
-                        return f"There are {len(students)} students in {program_name}, batch {batch}, section {section}."
-                    elif batch:
-                        return f"There are {len(students)} students in {program_name}, batch {batch}."
-                    elif section:
-                        return f"There are {len(students)} students in {program_name}, section {section}."
-                    else:
-                        return f"There are {len(students)} students in the {program_name} program."
+                    return f"There are {len(students)} students currently enrolled in {program_name}."
                 else:
-                    program_name = self.programs[program_match]["name"]
-                    if batch and section:
-                        return f"I couldn't find any students in {program_name}, batch {batch}, section {section}."
-                    elif batch:
-                        return f"I couldn't find any students in {program_name}, batch {batch}."
-                    elif section:
-                        return f"I couldn't find any students in {program_name}, section {section}."
-                    else:
-                        return f"I couldn't find any students in the {program_name} program."
+                    return f"I couldn't find any students in that program right now."
 
+        # Fall back to document-based search
         program, program_data = self.detect_program(question)
-        context = self.query_documents(question, program)
+        context = self.query_documents(question, program, k=20)
         
         if not context or len(context.strip()) < 10:
-            context = self.query_documents(question, None, k=20)
+            return "Hmm, I couldn't find specific information about that. Could you rephrase your question or ask about something else?"
 
-        if not context or len(context.strip()) < 10:
-            return "I couldn't find specific information about your question in our records. Could you try rephrasing or providing more details?"
+        # Use LLM for natural response generation
+        prompt_template = """You are a friendly assistant at Samriddhi College. Answer questions naturally and conversationally.
 
-        prompt_template = """You are a helpful and friendly assistant providing information about Samriddhi College and its programs.
-
-Available information from college documents:
+Context from documents:
 {context}
 
 Question: {question}
 
 Instructions:
-1. Provide a clear, helpful answer based ONLY on the available information
-2. Use natural, conversational language - avoid robotic or technical phrasing
-3. Be specific and accurate - cite specific details when possible
-4. If the information partially answers the question, provide what you can
-5. If you cannot find the answer in the provided context, say so clearly and politely
+- Answer in a natural, conversational tone (like talking to a friend)
+- Be helpful and informative
+- Keep it concise but complete
+- If info is partial, share what you know
+- Don't use bullet points unless listing multiple items
+- Don't be overly formal or robotic
 
-Answer the question in a friendly, helpful tone:
-"""
+Answer:"""
+        
         prompt = ChatPromptTemplate.from_template(prompt_template)
 
         chain = prompt | ChatGroq(
-            temperature=0.3,
+            temperature=0.4,
             model_name="llama-3.3-70b-versatile",
             groq_api_key=os.getenv("GROQ_API_KEY")
         ) | StrOutputParser()
@@ -959,51 +802,45 @@ Answer the question in a friendly, helpful tone:
             "context": context
         })
 
-        source = f"{program.upper()} document" if program else "Samriddhi College documents"
-        return f"{response}\n\n(Source: {source})"
+        return response.strip()
 
 
 def interactive_chat():
     print("\n" + "="*60)
-    print("SAMRIDDHI COLLEGE INFORMATION SYSTEM")
+    print("🎓 SAMRIDDHI COLLEGE CHATBOT")
     print("="*60)
-    print("Available Programs: BCA, CSIT (BSc CSIT), BSW, BBS")
-    print("You can ask about:")
-    print("- College information (principal, directors, facilities)")
-    print("- Program details (duration, eligibility, career prospects)") 
-    print("- Course structure and semester-wise subjects")
-    print("- Admission requirements and procedures")
-    print("- Teacher and student information (all database fields)")
-    print("  • Students: name, email, phone, roll no, symbol no, registration no,")
-    print("    program, batch, section, DOB, address, gender, joined date")
-    print("  • Teachers: name, email, phone, subject, designation, degree, address")
-    print("\nType 'exit' to end the session")
+    print("I can help you with:")
+    print("  • College info (principal, directors, facilities)")
+    print("  • Programs (BCA, CSIT, BSW, BBS)")
+    print("  • Courses, admissions, and career info")
+    print("  • Student & teacher details (with proper access)")
+    print("\nType 'exit' to quit")
     print("="*60)
 
     system = CollegeQuerySystem()
 
     while True:
         try:
-            question = input("\n💬 Your question: ").strip()
+            question = input("\n💬 Ask me: ").strip()
 
             if not question:
                 continue
 
-            if question.lower() in ['exit', 'quit', 'bye']:
-                print("\nThank you for using our system! Have a great day! 👋")
+            if question.lower() in ['exit', 'quit', 'bye', 'q']:
+                print("\n👋 Thanks for chatting! Have a great day!")
                 break
 
-            print("\n🔍 Searching for information...")
+            print("\n🔍 Let me check that for you...")
             response = system.generate_response(question)
-            print(f"\n📋 Answer:\n{response}")
+            print(f"\n✨ {response}")
             print("\n" + "-"*60)
 
         except KeyboardInterrupt:
-            print("\n\nSession ended. Goodbye! 👋")
+            print("\n\n👋 Goodbye!")
             break
         except Exception as e:
-            print(f"\n❌ Error: {str(e)}")
-            print("Please try again.")
+            print(f"\n❌ Oops, something went wrong: {str(e)}")
+            print("Let's try that again!")
 
 
 if __name__ == "__main__":
