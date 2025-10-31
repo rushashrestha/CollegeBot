@@ -126,9 +126,9 @@ function ChatBot() {
     },
   ]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [isTyping, setIsTyping] = useState(false); // ✅ NEW: Loading state
 
   //  STATES FOR PASSWORD CHANGE
-
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -162,7 +162,6 @@ function ChatBot() {
       console.log("   - userData:", localStorage.getItem("userData"));
 
       try {
-        // Read from localStorage FIRST - this is your source of truth
         const storedRole = localStorage.getItem("userRole");
         const storedEmail =
           localStorage.getItem("userEmail") ||
@@ -175,7 +174,6 @@ function ChatBot() {
           authenticated: isAuthenticated,
         });
 
-        // If we have stored credentials, use them as primary source
         if (
           isAuthenticated === "true" &&
           storedRole &&
@@ -192,12 +190,10 @@ function ChatBot() {
             role: storedRole,
           });
 
-          // Fetch user data if logged in
           if (storedRole !== "guest" && storedEmail) {
             await fetchUserData(storedEmail, storedRole);
           }
 
-          // Try to load chat history, but don't worry if it fails
           try {
             const userWithRole = await getCurrentUserWithRole();
             if (userWithRole?.id) {
@@ -209,7 +205,6 @@ function ChatBot() {
             );
           }
         } else {
-          // No valid stored credentials, treat as guest
           console.log("🎭 No valid authentication, starting as guest");
           setUserRole("guest");
           setUserInfo({
@@ -295,7 +290,6 @@ function ChatBot() {
     const shouldShowModal = sessionStorage.getItem("show_password_modal");
     if (shouldShowModal === "true" && userRole !== "guest") {
       sessionStorage.removeItem("show_password_modal");
-      // Wait a bit for UI to settle
       setTimeout(() => {
         setShowChangePasswordModal(true);
       }, 1000);
@@ -333,7 +327,7 @@ function ChatBot() {
     }
   };
 
-  // Function to load chat history - NO ROLE CHANGES
+  // Function to load chat history
   const loadChatHistory = async (userId) => {
     try {
       console.log("📚 Loading chat history for user:", userId);
@@ -405,7 +399,7 @@ function ChatBot() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]); // ✅ Also scroll when typing state changes
 
   // Save current session ID to localStorage
   useEffect(() => {
@@ -461,7 +455,7 @@ function ChatBot() {
   // Speech Recognition Functions
   const startListening = () => {
     if (recognitionRef.current && speechSupported) {
-      setQuery(""); // Clear existing text
+      setQuery("");
       recognitionRef.current.start();
     }
   };
@@ -472,36 +466,26 @@ function ChatBot() {
     }
   };
 
-  // You already have these imports, just make sure they're all there:
-  // (No need to add supabase import since you're using auth.js functions)
-
-  // Then in your handleSend function, replace the session creation logic:
-
-  // COMPLETE FIXED handleSend function - replace your entire handleSend
-
   const handleSend = async () => {
     if (query.trim()) {
       console.log("🚀 handleSend triggered with query:", query);
 
-      // Stop listening if currently active
       if (isListening) {
         stopListening();
       }
 
-      // ✅ FIX 1: Save query BEFORE clearing it
       const currentQuery = query;
-
-      // ✅ FIX 2: Clear input immediately to prevent disappearing text issue
       setQuery("");
 
-      // ✅ FIX 3: Add user message immediately
       const userMessage = { text: currentQuery, sender: "user" };
       setMessages((prev) => [...prev, userMessage]);
+
+      // ✅ Show typing indicator
+      setIsTyping(true);
 
       let sessionId = currentSessionId;
       let isGuestUser = false;
 
-      // ✅ FIX 4: Only create session if we don't have one
       if (!sessionId) {
         console.log("🆕 Creating new session on first message...");
 
@@ -509,7 +493,6 @@ function ChatBot() {
           const userWithRole = await getCurrentUserWithRole();
 
           if (userWithRole && userWithRole.id) {
-            // Authenticated user - create database session
             console.log("✅ Authenticated user detected:", userWithRole.email);
 
             try {
@@ -524,7 +507,6 @@ function ChatBot() {
                 sessionId = sessionData.id;
                 setCurrentSessionId(sessionId);
 
-                // Add to chat history
                 const newChat = {
                   id: sessionData.id,
                   title: sessionData.title,
@@ -544,7 +526,6 @@ function ChatBot() {
               console.log("⚠️ Falling back to guest mode");
             }
           } else {
-            // No authenticated user - create guest session
             sessionId = `guest-${Date.now()}`;
             setCurrentSessionId(sessionId);
             isGuestUser = true;
@@ -558,7 +539,6 @@ function ChatBot() {
           console.log("🎭 Guest session created (auth error)");
         }
       } else {
-        // Using existing session
         isGuestUser =
           sessionId.startsWith("guest-") || sessionId.startsWith("local-");
         console.log(
@@ -572,7 +552,6 @@ function ChatBot() {
         console.log("   - isGuestUser:", isGuestUser);
         console.log("   - userRole:", userRole);
 
-        // Save user message to database if authenticated
         if (
           !isGuestUser &&
           !sessionId.startsWith("guest-") &&
@@ -595,13 +574,11 @@ function ChatBot() {
           }
         }
 
-        // Use localStorage as source of truth for role
         const actualUserRole = localStorage.getItem("userRole") || "guest";
         const actualIsGuest = actualUserRole === "guest";
 
         console.log("📤 Using role from localStorage:", actualUserRole);
 
-        // Prepare request data
         const requestData = {
           query: currentQuery,
           user_role: actualUserRole,
@@ -636,10 +613,11 @@ function ChatBot() {
             access_restricted: data.access_restricted,
           };
 
+          // ✅ Hide typing indicator before showing message
+          setIsTyping(false);
           setMessages((prev) => [...prev, botMessage]);
           console.log("💬 Bot message added to chat");
 
-          // Save bot message to database if authenticated
           if (
             !isGuestUser &&
             !sessionId.startsWith("guest-") &&
@@ -662,7 +640,6 @@ function ChatBot() {
             }
           }
 
-          // Update session title only for authenticated users
           if (
             data.suggested_title &&
             !isGuestUser &&
@@ -692,6 +669,7 @@ function ChatBot() {
         }
       } catch (error) {
         console.error("💥 Fetch error:", error);
+        setIsTyping(false); // ✅ Hide typing on error
         const errorMessage = {
           text: `Sorry, there was an error: ${error.message}. ${
             isGuestUser
@@ -705,7 +683,6 @@ function ChatBot() {
     }
   };
 
-  // Add this helper function to detect generic titles
   const isGenericTitle = (title) => {
     if (!title) return true;
     const genericTitles = [
@@ -727,7 +704,6 @@ function ChatBot() {
   const handleLogout = async () => {
     console.log("🚪 LOGOUT INITIATED");
     localStorage.removeItem("currentSessionId");
-    // ✅ STEP 1: Clear ALL storage SYNCHRONOUSLY first
     localStorage.clear();
     sessionStorage.clear();
 
@@ -736,28 +712,23 @@ function ChatBot() {
       sessionStorage: sessionStorage.length,
     });
 
-    // ✅ STEP 2: Set a logout flag to prevent immediate re-auth
     sessionStorage.setItem("logoutInProgress", "true");
 
     try {
-      // ✅ STEP 3: Logout from Supabase
       await logoutUser();
       console.log("✅ Supabase logout complete");
     } catch (error) {
       console.error("⚠️ Supabase logout error (continuing anyway):", error);
     }
 
-    // ✅ STEP 4: Remove logout flag and navigate
     sessionStorage.removeItem("logoutInProgress");
-
-    // Force page reload to clear all React state
     window.location.href = "/login";
   };
 
   const handleNewChat = async () => {
     console.log("🆕 handleNewChat called - Starting new chat");
     localStorage.removeItem("currentSessionId");
-    // Stop any ongoing speech recognition
+    
     if (isListening) {
       stopListening();
     }
@@ -767,7 +738,6 @@ function ChatBot() {
       console.log("👤 Current user:", user);
 
       if (user) {
-        // Create new session in database
         const title = `Chat ${new Date().toLocaleTimeString()}`;
         console.log("📝 Creating session for role:", userRole);
 
@@ -787,7 +757,6 @@ function ChatBot() {
           console.log("✅ New chat session created:", data.id);
           setCurrentSessionId(data.id);
 
-          // Add to chat history
           const newChat = {
             id: data.id,
             title: data.title,
@@ -798,13 +767,11 @@ function ChatBot() {
           console.log("📚 Chat history updated");
         }
       } else {
-        // Guest user - create local session
         const guestSessionId = `guest-${Date.now()}`;
         console.log("🎭 Guest session created:", guestSessionId);
         setCurrentSessionId(guestSessionId);
       }
 
-      // Clear messages and close sidebar
       setMessages([
         {
           text: "Hello! Welcome to Samriddhi ChatBot. Ask me anything.",
@@ -814,7 +781,6 @@ function ChatBot() {
       setSidebarOpen(false);
     } catch (error) {
       console.error("💥 Error creating new chat session:", error);
-      // Fallback: create local session without saving to DB
       const fallbackSessionId = `local-${Date.now()}`;
       console.log("🔄 Falling back to local session:", fallbackSessionId);
       setCurrentSessionId(fallbackSessionId);
@@ -833,7 +799,6 @@ function ChatBot() {
     setPasswordError("");
     setIsChangingPassword(true);
 
-    // Validation
     if (passwordForm.newPassword.length < 6) {
       setPasswordError("Password must be at least 6 characters");
       setIsChangingPassword(false);
@@ -853,14 +818,12 @@ function ChatBot() {
     }
 
     try {
-      // Import supabase at top of file if not already
       const { createClient } = await import("@supabase/supabase-js");
       const supabase = createClient(
         import.meta.env.VITE_SUPABASE_URL,
         import.meta.env.VITE_SUPABASE_ANON_KEY
       );
 
-      // First verify current password by attempting to sign in
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: userInfo.email,
         password: passwordForm.currentPassword,
@@ -872,17 +835,14 @@ function ChatBot() {
         return;
       }
 
-      // Update password
       const { error: updateError } = await supabase.auth.updateUser({
         password: passwordForm.newPassword,
       });
 
       if (updateError) throw updateError;
 
-      // Mark as changed in localStorage
       localStorage.setItem(`password_changed_${userInfo.email}`, "true");
 
-      // ✅ ALSO update in database
       try {
         const tableName =
           userRole === "student" ? "students_data" : "teachers_data";
@@ -922,19 +882,16 @@ function ChatBot() {
     }
   };
 
-  // Function to delete a chat session
   const handleDeleteChat = async (sessionId, e) => {
-    e.stopPropagation(); // Prevent loading the chat
+    e.stopPropagation();
 
     try {
       const { error } = await deleteChatSession(sessionId);
 
       if (error) throw error;
 
-      // Remove from local state
       setChatHistory((prev) => prev.filter((chat) => chat.id !== sessionId));
 
-      // If current session is deleted, clear it
       if (currentSessionId === sessionId) {
         setCurrentSessionId(null);
         setMessages([
@@ -949,7 +906,6 @@ function ChatBot() {
     }
   };
 
-  // Show loader if showLoader is true
   if (showLoader) {
     return <Loader />;
   }
@@ -1067,7 +1023,6 @@ function ChatBot() {
                 <div className="user-role">Role: {userInfo.role}</div>
               </div>
 
-              {/* ADD THIS CHANGE PASSWORD BUTTON ⬇️ */}
               {userRole !== "guest" && (
                 <button
                   className="change-password-btn"
@@ -1322,6 +1277,18 @@ function ChatBot() {
                 )}
               </div>
             ))}
+            
+            {/* ✅ Typing Indicator */}
+            {isTyping && (
+              <div className="message bot typing-indicator">
+                <div className="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -1350,7 +1317,6 @@ function ChatBot() {
                 title={isListening ? "Stop listening" : "Start voice input"}
               >
                 {isListening ? (
-                  // Stop/Pause icon
                   <svg
                     width="20"
                     height="20"
@@ -1376,7 +1342,6 @@ function ChatBot() {
                     />
                   </svg>
                 ) : (
-                  // Microphone icon
                   <svg
                     width="20"
                     height="20"
@@ -1433,6 +1398,7 @@ function ChatBot() {
         </div>
       </div>
 
+      {/* Password Change Modal */}
       {showChangePasswordModal && (
         <div
           className="modal-overlay"

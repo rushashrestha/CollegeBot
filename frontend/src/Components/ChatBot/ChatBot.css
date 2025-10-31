@@ -493,6 +493,8 @@
 
 /* Input Container - Centered */
 .input-container {
+  
+  position: relative;
   padding: 1.5rem;
   background-color: transparent;
   width: 100%;
@@ -513,6 +515,7 @@
   padding: 0.5rem 0.75rem;
   transition: all 0.2s ease;
   box-shadow: 0 0 0 0 rgba(158, 118, 227, 0);
+  gap: 0.25rem; 
 }
 
 .app-container.dark .input-wrapper {
@@ -556,6 +559,9 @@
   justify-content: center;
   transition: all 0.2s ease;
   color: #6b7280;
+  width: 36px;      /* Fixed width */
+  height: 36px;     /* Fixed height */
+  flex-shrink: 0;
 }
 
 .mic-btn:hover {
@@ -592,6 +598,8 @@
   font-size: 0.875rem;
   font-weight: 500;
   margin-left: 0.5rem;
+   min-width: 70px;   /* Minimum width */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .send-btn:hover:not(:disabled) {
@@ -605,6 +613,10 @@
 
 /* Listening status */
 .listening-status {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
   margin-top: 0.5rem;
   color: #6b7280;
@@ -1117,5 +1129,85 @@
   .password-modal {
     padding: 20px;
     width: 95%;
+  }
+}
+
+/* ✅ ADD THESE STYLES TO YOUR ChatBot.css FILE */
+
+/* Typing indicator container */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px !important;
+  background: var(--bot-message-bg);
+  border-radius: 18px;
+  max-width: fit-content;
+}
+
+/* Typing dots container */
+.typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+}
+
+/* Individual dots */
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4f46e5;
+  opacity: 0.4;
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+/* Stagger the animation for each dot */
+.typing-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Bounce animation */
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+/* Dark mode support */
+.dark .typing-dots span {
+  background-color: #818cf8;
+}
+
+.light .typing-dots span {
+  background-color: #4f46e5;
+}
+
+/* Fade in animation */
+.message.typing-indicator {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
