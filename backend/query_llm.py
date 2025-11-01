@@ -256,6 +256,8 @@ class CollegeQuerySystem:
             return {"type": "teacher", "data": teachers[0]}
             
         return None
+    
+    
 
     def _get_person_info(self, person_data):
         """Get formatted information about a person in natural, flowing sentences"""
@@ -302,9 +304,19 @@ class CollegeQuerySystem:
             if year_semester != "N/A":
                 extra_info.append(f"{pronouns['subject'].capitalize()}'s currently in {year_semester}")
             
+            # Academic identifiers
+            id_parts = []
             if roll_no != "N/A":
-                extra_info.append(f"roll number {roll_no}")
+                id_parts.append(f"roll number {roll_no}")
+            if symbol_no != "N/A":
+                id_parts.append(f"symbol number {symbol_no}")
+            if registration_no != "N/A":
+                id_parts.append(f"registration number {registration_no}")
             
+            if id_parts:
+                extra_info.append(f"with {', '.join(id_parts)}")
+            
+            # Contact information
             contact_parts = []
             if email != "N/A":
                 contact_parts.append(f"email at {email}")
@@ -314,9 +326,25 @@ class CollegeQuerySystem:
             if contact_parts:
                 extra_info.append(f"you can reach {pronouns['object']} via {' or '.join(contact_parts)}")
             
+            # Date of birth
+            if dob_ad != "N/A":
+                extra_info.append(f"{pronouns['subject']} was born on {dob_ad}")
+            elif dob_bs != "N/A":
+                extra_info.append(f"{pronouns['subject']} was born on {dob_bs} BS")
+            
+            # Address information
+            if perm_address != "N/A":
+                extra_info.append(f"{pronouns['possessive_adj']} permanent address is {perm_address}")
+            if temp_address != "N/A" and temp_address != perm_address:
+                extra_info.append(f"currently residing at {temp_address}")
+            
+            # Joined date
+            if joined_date != "N/A":
+                extra_info.append(f"{pronouns['subject']} joined the college on {joined_date}")
+            
             response = intro
             if extra_info:
-                response += " " + ", and ".join(extra_info) + "."
+                response += " " + ", ".join(extra_info) + "."
             
             return response
             
@@ -366,48 +394,153 @@ class CollegeQuerySystem:
         name = data.get('name', 'Unknown')
         
         if person_data["type"] == "student":
+            # Email queries
             if "email" in q_lower:
                 email = data.get("email")
                 if email and email != "N/A":
                     return f"You can reach {name} at {email}."
                 return f"Sorry, I don't have an email address for {name}."
             
-            if "phone" in q_lower or "contact number" in q_lower or "mobile" in q_lower:
+            # Phone queries
+            if "phone" in q_lower or "contact number" in q_lower or "mobile" in q_lower or "contact" in q_lower:
                 phone = data.get("phone")
                 if phone and phone != "N/A":
                     return f"{name}'s phone number is {phone}."
                 return f"I don't have phone information for {name}."
             
+            # Roll number queries
             if "roll no" in q_lower or "roll number" in q_lower:
                 roll_no = data.get("roll_no")
                 if roll_no and roll_no != "N/A":
                     return f"{name}'s roll number is {roll_no}."
                 return f"I don't have roll number details for {name}."
             
+            # Symbol number queries
+            if "symbol" in q_lower:
+                symbol_no = data.get("symbol_no")
+                if symbol_no and symbol_no != "N/A":
+                    return f"{name}'s symbol number is {symbol_no}."
+                return f"I don't have symbol number details for {name}."
+            
+            # Registration number queries
+            if "registration" in q_lower or "reg number" in q_lower or "reg no" in q_lower:
+                registration_no = data.get("registration_no")
+                if registration_no and registration_no != "N/A":
+                    return f"{name}'s registration number is {registration_no}."
+                return f"I don't have registration number details for {name}."
+            
+            # Date of birth queries
+            if any(word in q_lower for word in ["dob", "date of birth", "birthday", "born"]):
+                dob_ad = data.get("dob_ad")
+                dob_bs = data.get("dob_bs")
+                if dob_ad and dob_ad != "N/A":
+                    return f"{name} was born on {dob_ad}."
+                elif dob_bs and dob_bs != "N/A":
+                    return f"{name} was born on {dob_bs} BS."
+                return f"I don't have date of birth information for {name}."
+            
+            # Address queries
+            if "address" in q_lower:
+                if "permanent" in q_lower:
+                    perm_address = data.get("perm_address")
+                    if perm_address and perm_address != "N/A":
+                        return f"{name}'s permanent address is {perm_address}."
+                    return f"I don't have permanent address information for {name}."
+                elif "temporary" in q_lower or "current" in q_lower:
+                    temp_address = data.get("temp_address")
+                    if temp_address and temp_address != "N/A":
+                        return f"{name}'s temporary address is {temp_address}."
+                    return f"I don't have temporary address information for {name}."
+                else:
+                    # General address query - show both if available
+                    perm_address = data.get("perm_address")
+                    temp_address = data.get("temp_address")
+                    addresses = []
+                    if perm_address and perm_address != "N/A":
+                        addresses.append(f"permanent address: {perm_address}")
+                    if temp_address and temp_address != "N/A":
+                        addresses.append(f"temporary address: {temp_address}")
+                    if addresses:
+                        return f"{name}'s {', '.join(addresses)}."
+                    return f"I don't have address information for {name}."
+            
+            # Joined date queries
+            if "joined" in q_lower or "admission date" in q_lower or "enrollment date" in q_lower:
+                joined_date = data.get("joined_date")
+                if joined_date and joined_date != "N/A":
+                    return f"{name} joined the college on {joined_date}."
+                return f"I don't have joining date information for {name}."
+            
+            # Batch queries
+            if "batch" in q_lower:
+                batch = data.get("batch")
+                if batch and batch != "N/A":
+                    return f"{name} is in batch {batch}."
+                return f"I don't have batch information for {name}."
+            
+            # Section queries
+            if "section" in q_lower:
+                section = data.get("section")
+                if section and section != "N/A":
+                    return f"{name} is in section {section}."
+                return f"I don't have section information for {name}."
+            
+            # Semester queries
+            if "semester" in q_lower or "year" in q_lower:
+                year_semester = data.get("year_semester")
+                if year_semester and year_semester != "N/A":
+                    return f"{name} is currently in {year_semester}."
+                return f"I don't have semester information for {name}."
+            
+            # Program queries
             if any(word in q_lower for word in ["program", "studying", "study", "course"]):
                 program = data.get("program")
                 if program and program != "N/A":
                     return f"{name} is studying {program}."
                 return f"I'm not sure what program {name} is in."
             
+            # Gender queries
+            if "gender" in q_lower:
+                gender = data.get("gender")
+                if gender and gender != "N/A":
+                    return f"{name} is {gender.lower()}."
+                return f"I don't have gender information for {name}."
+            
         else:  # teacher
+            # Email queries
             if "email" in q_lower:
                 email = data.get("email")
                 if email and email != "N/A":
                     return f"You can email {name} at {email}."
                 return f"Sorry, I don't have an email for {name}."
             
+            # Phone queries
             if "phone" in q_lower or "contact" in q_lower:
                 phone = data.get("phone")
                 if phone and phone != "N/A":
                     return f"{name}'s phone number is {phone}."
                 return f"I don't have contact information for {name}."
             
+            # Subject queries
             if "teach" in q_lower or "subject" in q_lower:
                 subject = data.get("subject")
                 if subject and subject != "N/A":
                     return f"{name} teaches {subject}."
                 return f"I'm not sure what {name} teaches."
+            
+            # Designation queries
+            if "designation" in q_lower or "position" in q_lower or "role" in q_lower:
+                designation = data.get("designation")
+                if designation and designation != "N/A":
+                    return f"{name} is a {designation}."
+                return f"I don't have designation information for {name}."
+            
+            # Degree queries
+            if "degree" in q_lower or "qualification" in q_lower or "education" in q_lower:
+                degree = data.get("degree")
+                if degree and degree != "N/A":
+                    return f"{name} holds a {degree} degree."
+                return f"I don't have degree information for {name}."
         
         return None
 
