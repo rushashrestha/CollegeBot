@@ -576,8 +576,51 @@ class CollegeQuerySystem:
         
         return None
 
-    def _handle_person_query(self, question):
+    def _handle_person_query(self, question, user_data=None):
         """Handle all types of person-related queries"""
+        
+        # NEW: Check for personal pronouns if user_data is provided
+        if user_data:
+            q_lower = question.lower()
+            personal_pronouns = [" my ", " me ", " mine ", " i ", " myself "]
+            if any(pronoun in q_lower for pronoun in personal_pronouns):
+                print(f"🔍 Handling personal pronoun query for: {user_data.get('name')}")
+                
+                # SPECIAL CASE: If asking for name specifically
+                if any(phrase in q_lower for phrase in ["my name", "what is my name", "who am i"]):
+                    user_name = user_data.get('name')
+                    if user_name and user_name != "N/A":
+                        return f"Your name is {user_name}."
+                    else:
+                        return "I don't have your name information in the system."
+                
+                # Use the current user's data
+                person_data = {"type": "student", "data": user_data}
+                
+                # Transform the question to match what _handle_specific_field_query expects
+                user_name = user_data.get('name', '')
+                modified_question = question
+                
+                # Replace personal pronouns with the format that _handle_specific_field_query understands
+                modified_question = modified_question.replace("my", f"{user_name}'s")
+                modified_question = modified_question.replace("mine", f"{user_name}'s")
+                modified_question = modified_question.replace("me", user_name)
+                modified_question = modified_question.replace("myself", user_name)
+                modified_question = modified_question.replace(" i ", f" {user_name} ")
+                
+                print(f"🔧 Modified question for field query: '{modified_question}'")
+                
+                specific_response = self._handle_specific_field_query(modified_question, person_data)
+                if specific_response:
+                    # Simple replacement to make it natural
+                    response = specific_response.replace(user_name + "'s", "Your")
+                    response = response.replace(user_name, "You")
+                    return response
+                
+                # If no specific field response, return general info
+                return self._get_person_info(person_data)
+        
+        # Existing logic for other person queries...
         name = self._extract_person_name(question)
         if not name:
             return None
@@ -834,6 +877,11 @@ class CollegeQuerySystem:
         if self._is_institutional_query(question):
             return "document"
         
+        # Check for personal pronouns (for logged-in users)
+        personal_pronouns = [" my ", " me ", " mine ", " i ", " myself "]
+        if any(pronoun in q_lower for pronoun in personal_pronouns):
+            return "person"
+        
         # Check for "who teaches X" - NOT "who is X"
         if ("who teaches" in q_lower or "who is teaching" in q_lower) and "who is" not in q_lower:
             return "teacher_subject"
@@ -890,7 +938,7 @@ class CollegeQuerySystem:
 
         # Route to appropriate handler
         if query_type == "person":
-            response = self._handle_person_query(question)
+            response = self._handle_person_query(question, user_data)
             if response:
                 return response
 
