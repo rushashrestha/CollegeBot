@@ -11,6 +11,7 @@ import torch
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from supabase import create_client, Client
 
 load_dotenv()
 
@@ -55,6 +56,10 @@ class CollegeQuerySystem:
             encode_kwargs={'normalize_embeddings': True}
         )
         self.vectordb_path = "db"
+        self.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        self.storage_bucket = "college-documents"
+
+        
 
         self.programs = {
             "csit": {
@@ -89,6 +94,33 @@ class CollegeQuerySystem:
             "chairman", "vice chairman", "dean", "head", "coordinator",
             "registrar", "controller", "chief", "president", "secretary"
         ]
+
+    def _load_documents_from_storage(self):
+        """Load all MD documents from Supabase Storage"""
+        try:
+            print("📄 Loading documents from Supabase Storage...")
+            files = self.supabase.storage.from_(self.storage_bucket).list()
+            
+            documents = []
+            for file_obj in files:
+                if file_obj['name'].endswith('.md'):
+                    try:
+                        file_data = self.supabase.storage.from_(self.storage_bucket).download(file_obj['name'])
+                        content = file_data.decode('utf-8')
+                        documents.append({
+                            'filename': file_obj['name'],
+                            'content': content
+                        })
+                        print(f"✅ Loaded: {file_obj['name']}")
+                    except Exception as e:
+                        print(f"❌ Error loading {file_obj['name']}: {e}")
+            
+            print(f"📚 Total documents loaded: {len(documents)}")
+            return documents
+            
+        except Exception as e:
+            print(f"❌ Error loading documents from storage: {e}")
+            return []
 
     def _is_institutional_query(self, question):
         """Check if query is about institutional roles (from documents, not database)"""

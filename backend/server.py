@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 from dotenv import load_dotenv
 import requests  
-
+STORAGE_BUCKET = "college-documents"
 from query_llm import CollegeQuerySystem
 
 # ------------------- PyTorch/CUDA Fix -------------------
@@ -87,16 +87,11 @@ def test_service_key_permissions():
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-# ------------------- Config -------------------
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'data')
-ALLOWED_EXTENSIONS = {'md'}
-
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-    print(f"📁 Created data directory: {UPLOAD_FOLDER}")
-
-print(f"📁 Using data directory: {UPLOAD_FOLDER}")
-print(f"📁 Files in data directory: {os.listdir(UPLOAD_FOLDER) if os.path.exists(UPLOAD_FOLDER) else 'Directory not found'}")
+system_stats = {
+    'total_queries': 0,
+    'successful_queries': 0,
+    'start_time': datetime.now()
+}
 
 # ------------------- CORS Configuration -------------------
 @app.after_request
@@ -111,6 +106,66 @@ def after_request(response):
     if 'Access-Control-Allow-Credentials' not in response.headers:
         response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
+
+#supabase storage ma .md files ko lagi functions
+def list_storage_files():
+    """List all MD files in Supabase Storage"""
+    try:
+        files = supabase.storage.from_(STORAGE_BUCKET).list()
+        print(f"📁 Raw storage response: {files}")  # Debug line to see actual structure
+        
+        # Filter for .md files and ensure we have the right structure
+        md_files = []
+        for file_obj in files:
+            # Handle different response formats
+            if isinstance(file_obj, dict):
+                filename = file_obj.get('name')
+            else:
+                filename = getattr(file_obj, 'name', None)
+            
+            if filename and filename.endswith('.md'):
+                md_files.append(file_obj)
+        
+        print(f"📄 Found {len(md_files)} .md files")
+        return md_files
+    except Exception as e:
+        print(f"❌ Error listing files: {e}")
+        return []
+
+def download_file_content(filename):
+    """Download file content from Supabase Storage"""
+    try:
+        file_data = supabase.storage.from_(STORAGE_BUCKET).download(filename)
+        if file_data:
+            content = file_data.decode('utf-8')
+            return content
+        return None
+    except Exception as e:
+        print(f"❌ Error downloading {filename}: {e}")
+        return None
+
+def upload_file_to_storage(file, filename):
+    """Upload file to Supabase Storage"""
+    try:
+        file_content = file.read()
+        supabase.storage.from_(STORAGE_BUCKET).upload(
+            filename,
+            file_content,
+            file_options={"content-type": "text/markdown"}
+        )
+        return True
+    except Exception as e:
+        print(f"❌ Error uploading {filename}: {e}")
+        return False
+
+def delete_file_from_storage(filename):
+    """Delete file from Supabase Storage"""
+    try:
+        supabase.storage.from_(STORAGE_BUCKET).remove([filename])
+        return True
+    except Exception as e:
+        print(f"❌ Error deleting {filename}: {e}")
+        return False
 
 # Handle OPTIONS requests for all admin routes
 @app.route('/admin/students/<student_id>', methods=['OPTIONS'])
@@ -309,17 +364,31 @@ def get_admin_stats():
                 .gte('created_at', yesterday)\
                 .execute()
             active_users = len(set([s['user_email'] for s in active_response.data])) if active_response.data else 0
+            print(f"👤 Active users: {active_users}")
         except Exception as e:
             print(f"⚠️ Error getting active users: {e}")
             active_users = 0
 
-        # Get document count
-        doc_count = 0
-        if os.path.exists(UPLOAD_FOLDER):
-            doc_count = len([f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.md')])
+        # Get document count from Supabase Storage
+        try:
+            files = list_storage_files()
+            doc_count = len(files)
+            print(f"📄 Total documents: {doc_count}")
+        except Exception as e:
+            print(f"⚠️ Error getting document count: {e}")
+            doc_count = 0
         
-        success_rate = 95.5
+        # Calculate success rate (you can adjust this logic)
+        success_rate = 95.5  # Default/placeholder
+        
+        # Calculate uptime
+        if 'system_stats' in globals():
+            uptime_hours = (datetime.now() - system_stats['start_time']).total_seconds() / 3600
+            uptime_str = f"{uptime_hours:.1f}h"
+        else:
+            uptime_str = "N/A"
 
+        print(f"✅ Stats fetched successfully")
         return jsonify({
             'totalStudents': total_students,
             'totalTeachers': total_teachers,
@@ -327,10 +396,13 @@ def get_admin_stats():
             'activeUsers': active_users,
             'totalDocuments': doc_count,
             'successRate': success_rate,
-            'systemUptime': '48.0h'
+            'systemUptime': uptime_str
         })
+        
     except Exception as e:
         logging.error(f"Error in /admin/stats: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'totalStudents': 0,
             'totalTeachers': 0,
@@ -371,58 +443,142 @@ def get_query_logs():
         logging.error(f"Error in /admin/queries: {str(e)}")
         return jsonify({'error': str(e), 'queries': []}), 500
 
+def list_storage_files():
+    """List all MD files in Supabase Storage"""
+    try:
+        files = supabase.storage.from_(STORAGE_BUCKET).list()
+        md_files = [f for f in files if f['name'].endswith('.md')]
+        return md_files
+    except Exception as e:
+        print(f"❌ Error listing files: {e}")
+        return []
+
+def download_file_content(filename):
+    """Download file content from Supabase Storage"""
+    try:
+        file_data = supabase.storage.from_(STORAGE_BUCKET).download(filename)
+        content = file_data.decode('utf-8')
+        return content
+    except Exception as e:
+        print(f"❌ Error downloading {filename}: {e}")
+        return None
+
+def upload_file_to_storage(file, filename):
+    """Upload file to Supabase Storage"""
+    try:
+        file_content = file.read()
+        supabase.storage.from_(STORAGE_BUCKET).upload(
+            filename,
+            file_content,
+            file_options={"content-type": "text/markdown"}
+        )
+        return True
+    except Exception as e:
+        print(f"❌ Error uploading {filename}: {e}")
+        return False
+
+def delete_file_from_storage(filename):
+    """Delete file from Supabase Storage"""
+    try:
+        supabase.storage.from_(STORAGE_BUCKET).remove([filename])
+        return True
+    except Exception as e:
+        print(f"❌ Error deleting {filename}: {e}")
+        return False
+    
 @app.route('/admin/documents', methods=['GET'])
 def get_documents():
+    """Get all documents from Supabase Storage"""
     try:
-        print("📄 Fetching documents...")
+        print("📄 Fetching documents from Supabase Storage...")
         docs = []
         
-        if os.path.exists(UPLOAD_FOLDER):
-            md_files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.md')]
-            print(f"📁 Found {len(md_files)} .md files: {md_files}")
-            
-            for i, filename in enumerate(md_files):
-                file_path = os.path.join(UPLOAD_FOLDER, filename)
+        files = list_storage_files()
+        print(f"📁 Found {len(files)} .md files in storage")
+        
+        for i, file_obj in enumerate(files):
+            try:
+                # Extract filename from different possible formats
+                if isinstance(file_obj, dict):
+                    filename = file_obj.get('name', 'unknown')
+                    metadata = file_obj.get('metadata', {})
+                    created_at = file_obj.get('created_at')
+                    updated_at = file_obj.get('updated_at')
+                else:
+                    filename = getattr(file_obj, 'name', 'unknown')
+                    metadata = getattr(file_obj, 'metadata', {})
+                    created_at = getattr(file_obj, 'created_at', None)
+                    updated_at = getattr(file_obj, 'updated_at', None)
+                
+                print(f"🔍 Processing file: {filename}")
+                
+                # Get file size
+                file_size_bytes = 0
+                if metadata and 'size' in metadata:
+                    file_size_bytes = metadata['size']
+                elif metadata and 'content_length' in metadata:
+                    file_size_bytes = metadata['content_length']
+                
+                file_size_kb = file_size_bytes / 1024 if file_size_bytes > 0 else 0
+                
+                # Get last modified date
+                last_modified = updated_at or created_at or datetime.now().isoformat()
+                
+                # Download content to count chunks and get accurate size
+                chunks = 1
+                actual_content = None
                 try:
-                    stat = os.stat(file_path)
-                    file_size_kb = stat.st_size / 1024
-                    
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        chunks = content.count('\n\n') + 1
-                    
-                    docs.append({
-                        'id': i + 1,
-                        'name': filename,
-                        'size': f"{file_size_kb:.1f}KB",
-                        'status': 'active',
-                        'chunks': chunks,
-                        'lastModified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
-                    })
-                    print(f"✅ Added document: {filename} ({file_size_kb:.1f}KB, {chunks} chunks)")
-                    
-                except Exception as file_error:
-                    print(f"❌ Error reading file {filename}: {file_error}")
-                    docs.append({
-                        'id': i + 1,
-                        'name': filename,
-                        'size': '0KB',
-                        'status': 'error',
-                        'chunks': 0,
-                        'lastModified': 'Unknown'
-                    })
-        else:
-            print(f"❌ Data directory not found: {UPLOAD_FOLDER}")
+                    actual_content = download_file_content(filename)
+                    if actual_content:
+                        # Count chunks (paragraphs separated by double newlines)
+                        chunks = len([chunk for chunk in actual_content.split('\n\n') if chunk.strip()])
+                        # Update actual file size
+                        file_size_bytes = len(actual_content.encode('utf-8'))
+                        file_size_kb = file_size_bytes / 1024
+                except Exception as content_error:
+                    print(f"⚠️ Could not read content for {filename}: {content_error}")
+                    chunks = 1
+                
+                doc_info = {
+                    'id': i + 1,
+                    'name': filename,
+                    'size': f"{file_size_kb:.1f}KB",
+                    'status': 'active',
+                    'chunks': chunks,
+                    'lastModified': last_modified,
+                    'content_preview': actual_content[:200] + '...' if actual_content and len(actual_content) > 200 else actual_content
+                }
+                
+                docs.append(doc_info)
+                print(f"✅ Added document: {filename} ({file_size_kb:.1f}KB, {chunks} chunks)")
+                
+            except Exception as file_error:
+                print(f"❌ Error processing file {filename}: {file_error}")
+                import traceback
+                traceback.print_exc()
+                
+                # Add error document entry
+                docs.append({
+                    'id': i + 1,
+                    'name': filename if 'filename' in locals() else 'unknown',
+                    'size': '0KB',
+                    'status': 'error',
+                    'chunks': 0,
+                    'lastModified': 'Unknown'
+                })
         
         print(f"📄 Returning {len(docs)} documents")
         return jsonify({'documents': docs})
         
     except Exception as e:
         print(f"❌ Error in /admin/documents: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e), 'documents': []}), 500
-
+    
 @app.route('/admin/documents/upload', methods=['POST'])
 def upload_document():
+    """Upload document to Supabase Storage"""
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
@@ -433,19 +589,18 @@ def upload_document():
             
         if file and file.filename.endswith('.md'):
             filename = secure_filename(file.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
             
-            if not os.path.exists(UPLOAD_FOLDER):
-                os.makedirs(UPLOAD_FOLDER)
+            success = upload_file_to_storage(file, filename)
             
-            file.save(file_path)
-            print(f"✅ Document uploaded: {filename} -> {file_path}")
-            
-            return jsonify({
-                'success': True, 
-                'filename': filename, 
-                'message': f'Document {filename} uploaded successfully'
-            })
+            if success:
+                print(f"✅ Document uploaded to Supabase Storage: {filename}")
+                return jsonify({
+                    'success': True, 
+                    'filename': filename, 
+                    'message': f'Document {filename} uploaded successfully'
+                })
+            else:
+                return jsonify({'error': 'Upload failed'}), 500
         else:
             return jsonify({'error': 'Only .md files allowed'}), 400
             
@@ -455,17 +610,19 @@ def upload_document():
 
 @app.route('/admin/documents/<filename>', methods=['DELETE'])
 def delete_document(filename):
+    """Delete document from Supabase Storage"""
     try:
         safe_filename = secure_filename(filename)
-        file_path = os.path.join(UPLOAD_FOLDER, safe_filename)
+        success = delete_file_from_storage(safe_filename)
         
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print(f"✅ Document deleted: {safe_filename}")
-            return jsonify({'success': True, 'message': f'Document {safe_filename} deleted'})
+        if success:
+            print(f"✅ Document deleted from Supabase Storage: {safe_filename}")
+            return jsonify({
+                'success': True, 
+                'message': f'Document {safe_filename} deleted'
+            })
         else:
-            print(f"❌ Document not found: {file_path}")
-            return jsonify({'error': 'Document not found'}), 404
+            return jsonify({'error': 'Delete failed'}), 500
             
     except Exception as e:
         print(f"❌ Delete error: {str(e)}")
@@ -475,17 +632,29 @@ def delete_document(filename):
 def reprocess_document(filename):
     try:
         safe_filename = secure_filename(filename)
-        file_path = os.path.join(UPLOAD_FOLDER, safe_filename)
         
-        if os.path.exists(file_path):
+        # Since we're using Supabase Storage, check if file exists in storage
+        files = list_storage_files()
+        file_exists = any(
+            (isinstance(f, dict) and f.get('name') == safe_filename) or 
+            (getattr(f, 'name', None) == safe_filename) 
+            for f in files
+        )
+        
+        if file_exists:
             print(f"✅ Document reprocess triggered: {safe_filename}")
-            return jsonify({'success': True, 'message': f'Document {safe_filename} reprocessing started'})
+            return jsonify({
+                'success': True, 
+                'message': f'Document {safe_filename} reprocessing started'
+            })
         else:
-            return jsonify({'error': 'Document not found'}), 404
+            return jsonify({'error': 'Document not found in storage'}), 404
             
     except Exception as e:
         print(f"❌ Reprocess error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    
+
 
 # ------------------- Students CRUD -------------------
 @app.route('/admin/students', methods=['GET'])
@@ -1085,8 +1254,6 @@ def health_check():
 # ------------------- Main -------------------
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
     print("🚀 Flask server starting on http://127.0.0.1:5000")
     print("📝 Using Supabase Auth for authentication")
     print("🔓 Only highly sensitive security information is restricted")
