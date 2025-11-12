@@ -22,7 +22,7 @@ const Loader = () => {
           <span className="letter">D</span>
           <span className="letter">D</span>
           <span className="letter">H</span>
-          <span className="letter">I</span>
+          {/* <span className="letter">I</span> */}
         </div>
       </div>
     </div>
