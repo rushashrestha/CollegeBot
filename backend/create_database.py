@@ -199,8 +199,7 @@ if __name__ == "__main__":
     
     # Check if data directory exists
     if not os.path.exists("data"):
-        print("❌ 'data' directory not found!")
-        print("Please create a 'data' directory and add your .md files there.")
+      
         exit(1)
     
     # Check for .md files
