@@ -1,8 +1,62 @@
+#create_database.py
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import os
+from supabase import create_client, Client 
+import shutil 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("VITE_SUPABASE_ANON_KEY")
+STORAGE_BUCKET = "college-documents"
+
+def download_files_from_supabase():
+    """Download all .md files from Supabase Storage to local data/ folder"""
+    print("📥 Downloading files from Supabase Storage...")
+    
+    # Initialize Supabase client
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    
+    # Create data directory if it doesn't exist
+    if not os.path.exists("data"):
+        os.makedirs("data")
+        print("✅ Created 'data' directory")
+    
+    try:
+        # List all files in storage bucket
+        files = supabase.storage.from_(STORAGE_BUCKET).list()
+        
+        md_files_downloaded = 0
+        
+        for file_obj in files:
+            filename = file_obj['name'] if isinstance(file_obj, dict) else getattr(file_obj, 'name', None)
+            
+            if filename and filename.endswith('.md'):
+                try:
+                    # Download file content
+                    file_data = supabase.storage.from_(STORAGE_BUCKET).download(filename)
+                    
+                    # Save to local data/ folder
+                    with open(f"data/{filename}", 'wb') as f:
+                        f.write(file_data)
+                    
+                    print(f"✅ Downloaded: {filename}")
+                    md_files_downloaded += 1
+                    
+                except Exception as e:
+                    print(f"❌ Error downloading {filename}: {e}")
+        
+        print(f"\n📁 Total files downloaded: {md_files_downloaded}")
+        return md_files_downloaded
+        
+    except Exception as e:
+        print(f"❌ Error accessing Supabase Storage: {e}")
+        return 0
+
 
 def load_and_process_md_files(directory="data"):
     all_texts = []
@@ -180,36 +234,58 @@ def analyze_database_content(vectordb):
         print(f"Analysis failed: {e}")
 
 if __name__ == "__main__":
-    print("Starting Enhanced Database Creation Process")
-    print("=" * 60)
+    print("\n" + "="*60)
+    print("🚀 ENHANCED DATABASE CREATION PROCESS")
+    print("="*60)
     
-    if not os.path.exists("data"):
-        print("Error: 'data' directory not found!")
-        print("Please create a 'data' directory with your .md files.")
+    # ✅ STEP 1: Download files from Supabase FIRST
+    print("\n" + "="*60)
+    print("STEP 1: Downloading from Supabase Storage")
+    print("="*60)
+    files_count = download_files_from_supabase()
+    
+    if files_count == 0:
+        print("\n❌ No files downloaded. Exiting.")
+        print("Please check:")
+        print("  1. SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env")
+        print("  2. Files uploaded to 'college-documents' bucket")
         exit(1)
     
-    md_files = [f for f in os.listdir("data") if f.endswith('.md')]
-    if not md_files:
-        print("No .md files found in 'data' directory!")
-        print("Please add your markdown files (Samriddhi.md, CSIT.md, etc.) to the 'data' directory.")
-        exit(1)
-    
-    print(f"Found {len(md_files)} markdown files: {md_files}")
-    print("Processing documents...")
-    
+    # ✅ STEP 2: Process downloaded files
+    print("\n" + "="*60)
+    print("STEP 2: Processing Documents")
+    print("="*60)
     texts = load_and_process_md_files()
     
     if not texts:
-        print("No content was processed. Please check your .md files.")
+        print("❌ No content was processed. Please check your .md files.")
         exit(1)
     
-    print(f"Successfully processed {len(texts)} text chunks")
+    print(f"✅ Successfully processed {len(texts)} text chunks")
     
+    # ✅ STEP 3: Create vector database
+    print("\n" + "="*60)
+    print("STEP 3: Creating Vector Database")
+    print("="*60)
     db = create_vector_store(texts)
     analyze_database_content(db)
     
-    print("=" * 60)
-    print("Database creation completed successfully!")
-    print(f"Database location: {os.path.abspath('db')}")
-    print("You can now run the query system!")
-    print("=" * 60)
+    # ✅ STEP 4: Optional cleanup
+    print("\n" + "="*60)
+    print("STEP 4: Cleanup")
+    print("="*60)
+    try:
+        cleanup = input("Delete temporary data/ folder? (y/n): ").lower()
+        if cleanup == 'y':
+            import shutil
+            shutil.rmtree("data")
+            print("🧹 Cleaned up temporary files")
+        else:
+            print("📁 Kept data/ folder for reference")
+    except:
+        print("📁 Kept data/ folder")
+    
+    print("\n" + "="*60)
+    print("✅ DATABASE CREATION COMPLETED!")
+    print(f"📍 Database location: {os.path.abspath('db')}")
+    print("="*60)
