@@ -14,22 +14,22 @@ import requests
 STORAGE_BUCKET = "college-documents"
 from query_llm import CollegeQuerySystem
 
-# ------------------- PyTorch/CUDA Fix -------------------
+#PyTorch
 import torch
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 torch.cuda.is_available = lambda: False
 print("🔧 PyTorch configured to use CPU only")
 
 
-# ------------------- Load Environment Variables -------------------
+#Load Environment Variables
 from dotenv import load_dotenv
-load_dotenv()  # This loads the .env file
+load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("VITE_SUPABASE_ANON_KEY")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-# ------------------- Debug Environment Variables -------------------
+
 print("\n" + "="*60)
 print("🔍 SUPABASE CONFIGURATION CHECK")
 print("="*60)
@@ -43,11 +43,11 @@ if SUPABASE_SERVICE_KEY:
     print(f"   Service Key preview: {SUPABASE_SERVICE_KEY[:20]}...")
 print("="*60 + "\n")
 
-# ------------------- Initialize Supabase Clients -------------------
+#Initialize Supabase Clients
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in .env file!")
 
-# Check if service key is available
+
 if not SUPABASE_SERVICE_KEY:
     print("⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY not found in environment!")
     print("⚠️ Backend will use anon key - user creation will fail!")
@@ -56,7 +56,6 @@ if not SUPABASE_SERVICE_KEY:
     supabase_admin: Client = supabase
 else:
     print("✅ Using Supabase Service Role Key for backend operations")
-    # Use service_role key for ALL backend operations to bypass RLS and enable admin features
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
     supabase_admin: Client = supabase
     print("✅ Supabase clients initialized successfully\n")
@@ -93,10 +92,9 @@ system_stats = {
     'start_time': datetime.now()
 }
 
-# ------------------- CORS Configuration -------------------
+#CORS Configuration 
 @app.after_request
 def after_request(response):
-    # Only set headers if they're not already set (prevents duplicates)
     if 'Access-Control-Allow-Origin' not in response.headers:
         response.headers['Access-Control-Allow-Origin'] = 'http://localhost:5173'
     if 'Access-Control-Allow-Headers' not in response.headers:
@@ -114,10 +112,8 @@ def list_storage_files():
         files = supabase.storage.from_(STORAGE_BUCKET).list()
         print(f"📁 Raw storage response: {files}")  # Debug line to see actual structure
         
-        # Filter for .md files and ensure we have the right structure
         md_files = []
         for file_obj in files:
-            # Handle different response formats
             if isinstance(file_obj, dict):
                 filename = file_obj.get('name')
             else:
@@ -167,7 +163,7 @@ def delete_file_from_storage(filename):
         print(f"❌ Error deleting {filename}: {e}")
         return False
 
-# Handle OPTIONS requests for all admin routes
+
 @app.route('/admin/students/<student_id>', methods=['OPTIONS'])
 @app.route('/admin/teachers/<teacher_id>', methods=['OPTIONS'])
 @app.route('/admin/force-password-update/<user_id>', methods=['OPTIONS'])
@@ -176,7 +172,7 @@ def delete_file_from_storage(filename):
 def options_handler(student_id=None, teacher_id=None, user_id=None):
     return '', 200
 
-# ------------------- Date Conversion Routes -------------------
+#Date Conversion Routes 
 @app.route('/convert/ad-to-bs', methods=['POST'])
 def convert_ad_to_bs():
     try:
@@ -228,7 +224,7 @@ def convert_bs_to_ad():
         logging.error(f"Error converting BS to AD: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# ------------------- Title Generation Function -------------------
+#Title Generation Function
 def generate_chat_title(question):
     """Generate a meaningful title for chat sessions"""
     if not question or len(question.strip()) == 0:
@@ -236,7 +232,6 @@ def generate_chat_title(question):
     
     question_lower = question.lower().strip()
     
-    # Course-related queries
     if any(word in question_lower for word in ['course', 'subject', 'syllabus', 'curriculum']):
         if 'csit' in question_lower:
             return "CSIT Courses & Curriculum"
@@ -249,7 +244,6 @@ def generate_chat_title(question):
         else:
             return "Course Information"
     
-    # Person queries
     elif any(phrase in question_lower for phrase in ['who is', 'information about', 'tell me about', 'details about']):
         name_patterns = [
             r'(?:who is|information about|tell me about|details about)\s+([^?.!]*)',
@@ -265,7 +259,6 @@ def generate_chat_title(question):
         
         return "Personal Information"
     
-    # Contact information
     elif any(word in question_lower for word in ['email', 'phone', 'contact', 'number']):
         if 'teacher' in question_lower or 'faculty' in question_lower:
             return "Faculty Contact Info"
@@ -274,7 +267,6 @@ def generate_chat_title(question):
         else:
             return "Contact Information"
     
-    # Program information
     elif any(word in question_lower for word in ['program', 'degree', 'bachelor']):
         if 'csit' in question_lower:
             return "BSc CSIT Program Info"
@@ -287,23 +279,18 @@ def generate_chat_title(question):
         else:
             return "Academic Programs"
     
-    # Admission queries
     elif any(word in question_lower for word in ['admission', 'eligibility', 'fee', 'apply']):
         return "Admission Process & Fees"
     
-    # Facility queries
     elif any(word in question_lower for word in ['facility', 'library', 'lab', 'campus']):
         return "College Facilities & Infrastructure"
     
-    # Semester and academic queries
     elif any(word in question_lower for word in ['semester', 'credit', 'exam', 'assignment']):
         return "Academic Information"
     
-    # Teacher/Faculty queries
     elif any(word in question_lower for word in ['teacher', 'faculty', 'professor', 'lecturer']):
         return "Faculty Information"
     
-    # Student queries
     elif any(word in question_lower for word in ['student', 'batch', 'section', 'roll']):
         return "Student Information"
     
@@ -322,14 +309,13 @@ def generate_chat_title(question):
         first_words = ' '.join(question.split()[:4])
         return first_words if len(first_words) <= 40 else first_words[:37] + '...'
 
-# ------------------- Admin Routes -------------------
+#Admin Routes 
 
 @app.route('/admin/stats', methods=['GET'])
 def get_admin_stats():
     try:
         print("📊 Fetching admin stats...")
         
-        # Get student count
         try:
             all_students = supabase.table('students_data').select('id').execute()
             total_students = len(all_students.data) if all_students.data else 0
@@ -338,7 +324,6 @@ def get_admin_stats():
             print(f"⚠️ Error getting student count: {e}")
             total_students = 0
 
-        # Get teacher count
         try:
             all_teachers = supabase.table('teachers_data').select('id').execute()
             total_teachers = len(all_teachers.data) if all_teachers.data else 0
@@ -347,7 +332,6 @@ def get_admin_stats():
             print(f"⚠️ Error getting teacher count: {e}")
             total_teachers = 0
 
-        # Get total queries from chat sessions
         try:
             all_sessions = supabase.table('chat_sessions').select('id').execute()
             total_queries = len(all_sessions.data) if all_sessions.data else 0
@@ -356,7 +340,6 @@ def get_admin_stats():
             print(f"⚠️ Error getting query count: {e}")
             total_queries = 0
 
-        # Get active users (users with sessions in last 24 hours)
         try:
             yesterday = (datetime.now() - timedelta(days=1)).isoformat()
             active_response = supabase.table('chat_sessions')\
@@ -369,7 +352,6 @@ def get_admin_stats():
             print(f"⚠️ Error getting active users: {e}")
             active_users = 0
 
-        # Get document count from Supabase Storage
         try:
             files = list_storage_files()
             doc_count = len(files)
@@ -378,10 +360,9 @@ def get_admin_stats():
             print(f"⚠️ Error getting document count: {e}")
             doc_count = 0
         
-        # Calculate success rate (you can adjust this logic)
-        success_rate = 95.5  # Default/placeholder
+       
+        success_rate = 95.5  
         
-        # Calculate uptime
         if 'system_stats' in globals():
             uptime_hours = (datetime.now() - system_stats['start_time']).total_seconds() / 3600
             uptime_str = f"{uptime_hours:.1f}h"
@@ -498,7 +479,6 @@ def get_documents():
         
         for i, file_obj in enumerate(files):
             try:
-                # Extract filename from different possible formats
                 if isinstance(file_obj, dict):
                     filename = file_obj.get('name', 'unknown')
                     metadata = file_obj.get('metadata', {})
@@ -512,7 +492,6 @@ def get_documents():
                 
                 print(f"🔍 Processing file: {filename}")
                 
-                # Get file size
                 file_size_bytes = 0
                 if metadata and 'size' in metadata:
                     file_size_bytes = metadata['size']
@@ -521,10 +500,8 @@ def get_documents():
                 
                 file_size_kb = file_size_bytes / 1024 if file_size_bytes > 0 else 0
                 
-                # Get last modified date
                 last_modified = updated_at or created_at or datetime.now().isoformat()
                 
-                # Download content to count chunks and get accurate size
                 chunks = 1
                 actual_content = None
                 try:
@@ -557,7 +534,6 @@ def get_documents():
                 import traceback
                 traceback.print_exc()
                 
-                # Add error document entry
                 docs.append({
                     'id': i + 1,
                     'name': filename if 'filename' in locals() else 'unknown',
@@ -633,7 +609,6 @@ def reprocess_document(filename):
     try:
         safe_filename = secure_filename(filename)
         
-        # Since we're using Supabase Storage, check if file exists in storage
         files = list_storage_files()
         file_exists = any(
             (isinstance(f, dict) and f.get('name') == safe_filename) or 
@@ -656,7 +631,7 @@ def reprocess_document(filename):
     
 
 
-# ------------------- Students CRUD -------------------
+# Students CRUD 
 @app.route('/admin/students', methods=['GET'])
 def get_students():
     try:
@@ -678,13 +653,11 @@ def add_student():
                 print(f"❌ Missing required field: {field}")
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
-        # Check if email already exists in students table
         existing_student = supabase.table('students_data').select('*').eq('email', data['email']).execute()
         if existing_student.data:
             print(f"❌ Email already exists: {data['email']}")
             return jsonify({'error': 'Email already exists. Please use a different email address.'}), 400
         
-        # Create user in Supabase Auth using DIRECT API (not SDK)
         try:
             auth_url = f"{SUPABASE_URL}/auth/v1/admin/users"
             headers = {
@@ -722,13 +695,11 @@ def add_student():
             print(f"❌ Auth user creation failed: {auth_error}")
             return jsonify({'error': f'Failed to create authentication: {str(auth_error)}'}), 500
         
-        # Generate student_id
         student_id = f"{data['roll_no']}-{data['program']}".upper().replace(' ', '')
         existing_id = supabase.table('students_data').select('student_id').eq('student_id', student_id).execute()
         if existing_id.data:
             student_id = f"{student_id}-{str(uuid.uuid4())[:8]}"
         
-        # Create student record
         student_data = {
             'student_id': student_id,
             'name': data['name'],
@@ -760,7 +731,6 @@ def add_student():
                 'student': student_response.data[0]
             })
         else:
-            # Rollback: delete auth user if student creation fails
             try:
                 delete_url = f"{SUPABASE_URL}/auth/v1/admin/users/{supabase_user_id}"
                 requests.delete(delete_url, headers=headers)
@@ -796,7 +766,6 @@ def update_student(student_id):
             .execute()
         
         if response.data:
-            # Update user metadata if full_name changed
             if data.get('full_name'):
                 try:
                     student = response.data[0]
@@ -823,7 +792,6 @@ def update_student(student_id):
 @app.route('/admin/students/<student_id>', methods=['DELETE'])
 def delete_student(student_id):
     try:
-        # Get student details
         student_response = supabase.table('students_data').select('*').eq('id', student_id).execute()
         if not student_response.data:
             return jsonify({'error': 'Student not found'}), 404
@@ -831,10 +799,8 @@ def delete_student(student_id):
         student = student_response.data[0]
         supabase_user_id = student.get('supabase_user_id')
         
-        # Delete from students_data
         supabase.table('students_data').delete().eq('id', student_id).execute()
         
-        # Delete from Supabase Auth
         if supabase_user_id:
             try:
                 supabase_admin.auth.admin.delete_user(supabase_user_id)
@@ -850,7 +816,7 @@ def delete_student(student_id):
         print(f"❌ Error deleting student: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# ------------------- Teachers CRUD -------------------
+#Teachers CRUD 
 @app.route('/admin/teachers', methods=['GET'])
 def get_teachers():
     try:
@@ -871,12 +837,10 @@ def add_teacher():
             if not data.get(field):
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
-        # Check if email already exists
         existing_teacher = supabase.table('teachers_data').select('*').eq('email', data['email']).execute()
         if existing_teacher.data:
             return jsonify({'error': 'Email already exists. Please use a different email address.'}), 400
         
-        # Create user in Supabase Auth using DIRECT API
         try:
             auth_url = f"{SUPABASE_URL}/auth/v1/admin/users"
             headers = {
@@ -914,7 +878,6 @@ def add_teacher():
             print(f"❌ Auth user creation failed: {auth_error}")
             return jsonify({'error': f'Failed to create authentication: {str(auth_error)}'}), 500
         
-        # Create teacher record
         teacher_data = {
             'name': data['name'],
             'designation': data['designation'],
@@ -936,7 +899,6 @@ def add_teacher():
                 'teacher': teacher_response.data[0]
             })
         else:
-            # Rollback: delete auth user if teacher creation fails
             try:
                 delete_url = f"{SUPABASE_URL}/auth/v1/admin/users/{supabase_user_id}"
                 headers = {
@@ -972,7 +934,6 @@ def update_teacher(teacher_id):
             .execute()
         
         if response.data:
-            # Update user metadata if full_name changed
             if data.get('full_name'):
                 try:
                     teacher = response.data[0]
@@ -999,7 +960,6 @@ def update_teacher(teacher_id):
 @app.route('/admin/teachers/<teacher_id>', methods=['DELETE'])
 def delete_teacher(teacher_id):
     try:
-        # Get teacher details
         teacher_response = supabase.table('teachers_data').select('*').eq('id', teacher_id).execute()
         if not teacher_response.data:
             return jsonify({'error': 'Teacher not found'}), 404
@@ -1007,10 +967,8 @@ def delete_teacher(teacher_id):
         teacher = teacher_response.data[0]
         supabase_user_id = teacher.get('supabase_user_id')
         
-        # Delete from teachers_data
         supabase.table('teachers_data').delete().eq('id', teacher_id).execute()
         
-        # Delete from Supabase Auth
         if supabase_user_id:
             try:
                 supabase_admin.auth.admin.delete_user(supabase_user_id)
@@ -1037,7 +995,6 @@ def mark_password_changed():
         if not email or not table:
             return jsonify({'error': 'Email and table required'}), 400
         
-        # Update the password_changed flag
         response = supabase.table(table)\
             .update({'password_changed': True})\
             .eq('email', email)\
@@ -1064,7 +1021,6 @@ def check_password_changed():
         if not email or not table:
             return jsonify({'error': 'Email and table required'}), 400
         
-        # Check the password_changed flag
         response = supabase.table(table)\
             .select('password_changed')\
             .eq('email', email)\
@@ -1124,7 +1080,6 @@ def force_password_update(user_id):
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# ------------------- Analytics Endpoint -------------------
 @app.route('/admin/analytics', methods=['GET'])
 def get_analytics():
     try:
@@ -1154,7 +1109,6 @@ def get_analytics():
         logging.error(f"Error fetching analytics: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# ------------------- LLM Query Route -------------------
 @app.route('/api/query', methods=['POST'])
 def handle_query():
     try:
@@ -1174,16 +1128,13 @@ def handle_query():
         if not query:
             return jsonify({'error': 'No query provided'}), 400
         
-        # Initialize query system
         system = CollegeQuerySystem()
         
         print(f"🔄 Calling LLM with user_role: {user_role}")
         response = system.generate_response(query, user_role, user_data)
         
-        # Generate suggested title
         suggested_title = generate_chat_title(query)
 
-        # Set access_restricted based on response content
         access_restricted = any(phrase in response.lower() for phrase in [
             'guest users can only access',
             'please log in', 
@@ -1215,7 +1166,6 @@ def handle_query():
             'access_restricted': False
         }), 500
 
-# ------------------- User Data Route -------------------
 @app.route('/api/user-data', methods=['POST'])
 def get_user_data():
     try:
@@ -1239,7 +1189,6 @@ def get_user_data():
         return jsonify({'error': str(e)}), 500
 
 
-# ------------------- Health Check -------------------
 @app.route('/health', methods=['GET'])
 def health_check():
     global system_stats
@@ -1251,7 +1200,6 @@ def health_check():
         'uptime_hours': (datetime.now() - system_stats['start_time']).total_seconds() / 3600
     })
 
-# ------------------- Main -------------------
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     print("🚀 Flask server starting on http://127.0.0.1:5000")

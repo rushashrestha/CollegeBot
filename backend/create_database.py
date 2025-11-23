@@ -5,10 +5,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 import os
 
 def load_and_process_md_files(directory="data"):
-    """Enhanced processing with better chunking strategies"""
     all_texts = []
-    
-    # Enhanced program configuration
     program_config = {
         "samriddhi": {
             "separators": ["\n### ", "\n## ", "\n# ", "\n\n", ":\n", "\n- "],
@@ -50,10 +47,8 @@ def load_and_process_md_files(directory="data"):
                 loader = TextLoader(f"{directory}/{filename}", encoding='utf-8')
                 documents = loader.load()
                 
-                # Enhanced separators
                 base_separators = config["separators"].copy()
                 
-                # Add dynamic semester and section separators
                 semester_seps = []
                 for i in range(1, 9):
                     semester_seps.extend([
@@ -77,11 +72,9 @@ def load_and_process_md_files(directory="data"):
                 
                 texts = text_splitter.split_documents(documents)
                 
-                # Enhanced metadata
                 for i, text in enumerate(texts):
                     content = text.page_content.lower()
                     
-                    # Determine chunk type
                     chunk_type = "general"
                     if "semester" in content:
                         chunk_type = "curriculum"
@@ -103,20 +96,18 @@ def load_and_process_md_files(directory="data"):
                     })
                 
                 all_texts.extend(texts)
-                print(f"✅ Processed {filename}: {len(texts)} chunks")
+                print(f"Processed {filename}: {len(texts)} chunks")
                 
-                # Debug: Show some chunk previews
                 if len(texts) > 0:
-                    print(f"   Sample chunk types: {set([t.metadata.get('chunk_type') for t in texts[:5]])}")
+                    print(f"Sample chunk types: {set([t.metadata.get('chunk_type') for t in texts[:5]])}")
                 
             except Exception as e:
-                print(f"❌ Error processing {filename}: {str(e)}")
+                print(f"Error processing {filename}: {str(e)}")
     
     return all_texts
 
 def create_vector_store(texts):
-    """Create enhanced vector database with better configuration"""
-    print("🔧 Initializing embedding model...")
+    print("Initializing embedding model...")
     
     embedding = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2",
@@ -127,15 +118,13 @@ def create_vector_store(texts):
         }
     )
     
-    print("📦 Creating vector database...")
+    print("Creating vector database...")
     
-    # Remove existing database
     import shutil
     if os.path.exists("db"):
         shutil.rmtree("db")
-        print("🗑️  Removed existing database")
+        print("Removed existing database")
     
-    # Create new database with enhanced settings
     vectordb = Chroma.from_documents(
         documents=texts,
         embedding=embedding,
@@ -146,10 +135,9 @@ def create_vector_store(texts):
         }
     )
     
-    print("💾 Vector database created successfully!")
+    print("Vector database created successfully!")
     
-    # Test the database
-    print("\n🧪 Testing database retrieval...")
+    print("Testing database retrieval...")
     test_queries = [
         "principal of samriddhi college",
         "CSIT semester 1 courses",
@@ -159,20 +147,18 @@ def create_vector_store(texts):
     for query in test_queries:
         try:
             results = vectordb.similarity_search(query, k=3)
-            print(f"   Query: '{query}' → Found {len(results)} results")
+            print(f"Query: '{query}' → Found {len(results)} results")
             if results:
-                print(f"      Top result preview: {results[0].page_content[:80]}...")
+                print(f"Top result preview: {results[0].page_content[:80]}...")
         except Exception as e:
-            print(f"   Query: '{query}' → Error: {e}")
+            print(f"Query: '{query}' → Error: {e}")
     
     return vectordb
 
 def analyze_database_content(vectordb):
-    """Analyze what's in the database for debugging"""
-    print("\n📊 Database Content Analysis:")
+    print("Database Content Analysis:")
     
     try:
-        # Get all documents (sample)
         all_docs = vectordb.get()
         
         if 'metadatas' in all_docs:
@@ -186,45 +172,44 @@ def analyze_database_content(vectordb):
                 programs[prog] = programs.get(prog, 0) + 1
                 chunk_types[ctype] = chunk_types.get(ctype, 0) + 1
             
-            print(f"📁 Programs: {dict(programs)}")
-            print(f"🏷️  Chunk Types: {dict(chunk_types)}")
-            print(f"📄 Total Documents: {len(all_docs.get('metadatas', []))}")
+            print(f"Programs: {dict(programs)}")
+            print(f"Chunk Types: {dict(chunk_types)}")
+            print(f"Total Documents: {len(all_docs.get('metadatas', []))}")
         
     except Exception as e:
-        print(f"   Analysis failed: {e}")
+        print(f"Analysis failed: {e}")
 
 if __name__ == "__main__":
-    print("🚀 Starting Enhanced Database Creation Process")
+    print("Starting Enhanced Database Creation Process")
     print("=" * 60)
     
-    # Check if data directory exists
     if not os.path.exists("data"):
-      
+        print("Error: 'data' directory not found!")
+        print("Please create a 'data' directory with your .md files.")
         exit(1)
     
-    # Check for .md files
     md_files = [f for f in os.listdir("data") if f.endswith('.md')]
     if not md_files:
-        print("❌ No .md files found in 'data' directory!")
+        print("No .md files found in 'data' directory!")
         print("Please add your markdown files (Samriddhi.md, CSIT.md, etc.) to the 'data' directory.")
         exit(1)
     
-    print(f"📋 Found {len(md_files)} markdown files: {md_files}")
-    print("\n🔄 Processing documents...")
+    print(f"Found {len(md_files)} markdown files: {md_files}")
+    print("Processing documents...")
     
     texts = load_and_process_md_files()
     
     if not texts:
-        print("❌ No content was processed. Please check your .md files.")
+        print("No content was processed. Please check your .md files.")
         exit(1)
     
-    print(f"\n✅ Successfully processed {len(texts)} text chunks")
+    print(f"Successfully processed {len(texts)} text chunks")
     
     db = create_vector_store(texts)
     analyze_database_content(db)
     
-    print("\n" + "=" * 60)
-    print("🎉 Database creation completed successfully!")
-    print(f"📂 Database location: {os.path.abspath('db')}")
-    print("✨ You can now run the query system!")
+    print("=" * 60)
+    print("Database creation completed successfully!")
+    print(f"Database location: {os.path.abspath('db')}")
+    print("You can now run the query system!")
     print("=" * 60)
