@@ -152,6 +152,21 @@ function ChatBot() {
   useEffect(() => {
     const initializeUser = async () => {
       console.log("=== CHATBOT INITIALIZATION START ===");
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const freshGuest = urlParams.get('freshGuest') || sessionStorage.getItem('freshGuest');
+
+        if (freshGuest) {
+      console.log("🆕 Fresh guest session detected, clearing old data");
+      // Clear any old guest sessions
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('guest_messages_') && !key.includes(sessionStorage.getItem('currentGuestSession'))) {
+          localStorage.removeItem(key);
+        }
+      });
+      sessionStorage.removeItem('freshGuest');
+    }
+
       console.log("🔄 INITIALIZING USER - localStorage contents:");
       console.log("   - userRole:", localStorage.getItem("userRole"));
       console.log("   - userEmail:", localStorage.getItem("userEmail"));
@@ -420,7 +435,31 @@ function ChatBot() {
           currentSessionId.startsWith("guest-") ||
           currentSessionId.startsWith("local-")
         ) {
-          return;
+           console.log("🎭 Restoring guest session from localStorage");
+        const guestMessages = localStorage.getItem(`guest_messages_${currentSessionId}`);
+
+        if (guestMessages) {
+          try {
+            const parsedMessages = JSON.parse(guestMessages);
+            const formattedMessages = parsedMessages.map(msg => ({
+              text: msg.text,
+              sender: msg.sender,
+              timestamp: new Date(msg.timestamp),
+              access_restricted: msg.access_restricted
+            }));
+            
+            console.log("✅ Guest session restored with", formattedMessages.length, "messages");
+            setMessages(formattedMessages);
+          } catch (error) {
+            console.error("❌ Error parsing guest messages:", error);
+            setCurrentSessionId(null);
+          }
+        } else {
+          console.log("⚠️ No guest messages found in localStorage");
+          setCurrentSessionId(null);
+        }
+        return;
+         
         }
 
         try {
@@ -466,222 +505,249 @@ function ChatBot() {
     }
   };
 
-  const handleSend = async () => {
-    if (query.trim()) {
-      console.log("🚀 handleSend triggered with query:", query);
+ const handleSend = async () => {
+  if (query.trim()) {
+    console.log("🚀 handleSend triggered with query:", query);
 
-      if (isListening) {
-        stopListening();
-      }
+    if (isListening) {
+      stopListening();
+    }
 
-      const currentQuery = query;
-      setQuery("");
+    const currentQuery = query;
+    setQuery("");
 
-      const userMessage = { text: currentQuery, sender: "user" };
-      setMessages((prev) => [...prev, userMessage]);
+    const userMessage = { text: currentQuery, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]);
 
-      // ✅ Show typing indicator
-      setIsTyping(true);
+    // ✅ Show typing indicator
+    setIsTyping(true);
 
-      let sessionId = currentSessionId;
-      let isGuestUser = false;
+    let sessionId = currentSessionId;
+    let isGuestUser = false;
 
-      if (!sessionId) {
-        console.log("🆕 Creating new session on first message...");
+    if (!sessionId) {
+      console.log("🆕 Creating new session on first message...");
 
-        try {
-          const userWithRole = await getCurrentUserWithRole();
+      try {
+        const userWithRole = await getCurrentUserWithRole();
 
-          if (userWithRole && userWithRole.id) {
-            console.log("✅ Authenticated user detected:", userWithRole.email);
+        if (userWithRole && userWithRole.id) {
+          console.log("✅ Authenticated user detected:", userWithRole.email);
 
-            try {
-              const { data: sessionData, error } = await createChatSession(
-                userWithRole.email,
-                userWithRole.role,
-                `Chat ${new Date().toLocaleTimeString()}`,
-                userWithRole.id
-              );
+          try {
+            const { data: sessionData, error } = await createChatSession(
+              userWithRole.email,
+              userWithRole.role,
+              `Chat ${new Date().toLocaleTimeString()}`,
+              userWithRole.id
+            );
 
-              if (sessionData && !error) {
-                sessionId = sessionData.id;
-                setCurrentSessionId(sessionId);
-
-                const newChat = {
-                  id: sessionData.id,
-                  title: sessionData.title,
-                  timestamp: "Now",
-                  rawDate: new Date(sessionData.created_at),
-                };
-                setChatHistory((prev) => [newChat, ...prev]);
-                console.log("✅ Authenticated session created:", sessionId);
-              } else {
-                throw new Error("Failed to create authenticated session");
-              }
-            } catch (error) {
-              console.error("❌ Error creating authenticated session:", error);
-              sessionId = `guest-${Date.now()}`;
+            if (sessionData && !error) {
+              sessionId = sessionData.id;
               setCurrentSessionId(sessionId);
-              isGuestUser = true;
-              console.log("⚠️ Falling back to guest mode");
+
+              const newChat = {
+                id: sessionData.id,
+                title: sessionData.title,
+                timestamp: "Now",
+                rawDate: new Date(sessionData.created_at),
+              };
+              setChatHistory((prev) => [newChat, ...prev]);
+              console.log("✅ Authenticated session created:", sessionId);
+            } else {
+              throw new Error("Failed to create authenticated session");
             }
-          } else {
+          } catch (error) {
+            console.error("❌ Error creating authenticated session:", error);
             sessionId = `guest-${Date.now()}`;
             setCurrentSessionId(sessionId);
             isGuestUser = true;
-            console.log("🎭 Guest session created (no auth)");
+            console.log("⚠️ Falling back to guest mode");
           }
-        } catch (error) {
-          console.error("❌ Auth check error:", error);
+        } else {
           sessionId = `guest-${Date.now()}`;
           setCurrentSessionId(sessionId);
           isGuestUser = true;
-          console.log("🎭 Guest session created (auth error)");
+          console.log("🎭 Guest session created (no auth)");
+        }
+      } catch (error) {
+        console.error("❌ Auth check error:", error);
+        sessionId = `guest-${Date.now()}`;
+        setCurrentSessionId(sessionId);
+        isGuestUser = true;
+        console.log("🎭 Guest session created (auth error)");
+      }
+    } else {
+      isGuestUser =
+        sessionId.startsWith("guest-") || sessionId.startsWith("local-");
+      console.log(
+        `📝 Using existing session: ${sessionId} (Guest: ${isGuestUser})`
+      );
+    }
+
+    // ✅ NEW: Save guest session to localStorage immediately
+    if (isGuestUser) {
+      localStorage.setItem("currentSessionId", sessionId);
+      console.log("💾 Guest session saved to localStorage:", sessionId);
+    }
+
+    try {
+      console.log("🔍 DEBUG - Session & Role Status:");
+      console.log("   - sessionId:", sessionId);
+      console.log("   - isGuestUser:", isGuestUser);
+      console.log("   - userRole:", userRole);
+
+      if (
+        !isGuestUser &&
+        !sessionId.startsWith("guest-") &&
+        !sessionId.startsWith("local-")
+      ) {
+        console.log("💾 Saving user message to session:", sessionId);
+        try {
+          const { error } = await saveChatMessage(
+            sessionId,
+            currentQuery,
+            "user"
+          );
+          if (error) {
+            console.error("❌ Error saving user message:", error);
+          } else {
+            console.log("✅ User message saved to database");
+          }
+        } catch (error) {
+          console.error("💥 Error saving message:", error);
         }
       } else {
-        isGuestUser =
-          sessionId.startsWith("guest-") || sessionId.startsWith("local-");
-        console.log(
-          `📝 Using existing session: ${sessionId} (Guest: ${isGuestUser})`
-        );
+        // ✅ NEW: Save guest messages to localStorage
+        const guestMessages = JSON.parse(localStorage.getItem(`guest_messages_${sessionId}`) || '[]');
+        guestMessages.push({
+          text: currentQuery,
+          sender: "user",
+          timestamp: new Date().toISOString()
+        });
+        localStorage.setItem(`guest_messages_${sessionId}`, JSON.stringify(guestMessages));
+        console.log("💾 Guest user message saved to localStorage");
       }
 
-      try {
-        console.log("🔍 DEBUG - Session & Role Status:");
-        console.log("   - sessionId:", sessionId);
-        console.log("   - isGuestUser:", isGuestUser);
-        console.log("   - userRole:", userRole);
+      const actualUserRole = localStorage.getItem("userRole") || "guest";
+      const actualIsGuest = actualUserRole === "guest";
+
+      console.log("📤 Using role from localStorage:", actualUserRole);
+
+      const requestData = {
+        query: currentQuery,
+        user_role: actualUserRole,
+        user_data: userData,
+        session_id: sessionId,
+        is_guest: actualIsGuest,
+      };
+
+      console.log("📤 Sending request to backend:", requestData);
+
+      const response = await fetch("http://localhost:5000/api/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log("📥 Response status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Backend response received");
+
+      if (data.response) {
+        const botMessage = {
+          text: data.response,
+          sender: "bot",
+          access_restricted: data.access_restricted,
+        };
+
+        // ✅ Hide typing indicator before showing message
+        setIsTyping(false);
+        setMessages((prev) => [...prev, botMessage]);
+        console.log("💬 Bot message added to chat");
 
         if (
           !isGuestUser &&
           !sessionId.startsWith("guest-") &&
           !sessionId.startsWith("local-")
         ) {
-          console.log("💾 Saving user message to session:", sessionId);
+          console.log("💾 Saving bot message to session:", sessionId);
           try {
             const { error } = await saveChatMessage(
               sessionId,
-              currentQuery,
-              "user"
+              data.response,
+              "bot"
             );
             if (error) {
-              console.error("❌ Error saving user message:", error);
+              console.error("❌ Error saving bot message:", error);
             } else {
-              console.log("✅ User message saved to database");
+              console.log("✅ Bot message saved to database");
             }
           } catch (error) {
-            console.error("💥 Error saving message:", error);
+            console.error("💥 Error saving bot message:", error);
           }
-        }
-
-        const actualUserRole = localStorage.getItem("userRole") || "guest";
-        const actualIsGuest = actualUserRole === "guest";
-
-        console.log("📤 Using role from localStorage:", actualUserRole);
-
-        const requestData = {
-          query: currentQuery,
-          user_role: actualUserRole,
-          user_data: userData,
-          session_id: sessionId,
-          is_guest: actualIsGuest,
-        };
-
-        console.log("📤 Sending request to backend:", requestData);
-
-        const response = await fetch("http://localhost:5000/api/query", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestData),
-        });
-
-        console.log("📥 Response status:", response.status);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("✅ Backend response received");
-
-        if (data.response) {
-          const botMessage = {
+        } else {
+          // ✅ NEW: Save bot messages to localStorage for guest sessions
+          const guestMessages = JSON.parse(localStorage.getItem(`guest_messages_${sessionId}`) || '[]');
+          guestMessages.push({
             text: data.response,
             sender: "bot",
-            access_restricted: data.access_restricted,
-          };
+            timestamp: new Date().toISOString(),
+            access_restricted: data.access_restricted
+          });
+          localStorage.setItem(`guest_messages_${sessionId}`, JSON.stringify(guestMessages));
+          console.log("💾 Guest bot message saved to localStorage");
+        }
 
-          // ✅ Hide typing indicator before showing message
-          setIsTyping(false);
-          setMessages((prev) => [...prev, botMessage]);
-          console.log("💬 Bot message added to chat");
-
-          if (
-            !isGuestUser &&
-            !sessionId.startsWith("guest-") &&
-            !sessionId.startsWith("local-")
-          ) {
-            console.log("💾 Saving bot message to session:", sessionId);
-            try {
-              const { error } = await saveChatMessage(
-                sessionId,
-                data.response,
-                "bot"
+        if (
+          data.suggested_title &&
+          !isGuestUser &&
+          !sessionId.startsWith("guest-") &&
+          !sessionId.startsWith("local-")
+        ) {
+          console.log("🔄 Updating session title to:", data.suggested_title);
+          try {
+            const { error } = await updateChatSessionTitle(
+              sessionId,
+              data.suggested_title
+            );
+            if (!error) {
+              setChatHistory((prev) =>
+                prev.map((chat) =>
+                  chat.id === sessionId
+                    ? { ...chat, title: data.suggested_title }
+                    : chat
+                )
               );
-              if (error) {
-                console.error("❌ Error saving bot message:", error);
-              } else {
-                console.log("✅ Bot message saved to database");
-              }
-            } catch (error) {
-              console.error("💥 Error saving bot message:", error);
+              console.log("✅ Session title updated");
             }
-          }
-
-          if (
-            data.suggested_title &&
-            !isGuestUser &&
-            !sessionId.startsWith("guest-") &&
-            !sessionId.startsWith("local-")
-          ) {
-            console.log("🔄 Updating session title to:", data.suggested_title);
-            try {
-              const { error } = await updateChatSessionTitle(
-                sessionId,
-                data.suggested_title
-              );
-              if (!error) {
-                setChatHistory((prev) =>
-                  prev.map((chat) =>
-                    chat.id === sessionId
-                      ? { ...chat, title: data.suggested_title }
-                      : chat
-                  )
-                );
-                console.log("✅ Session title updated");
-              }
-            } catch (error) {
-              console.error("❌ Error updating title:", error);
-            }
+          } catch (error) {
+            console.error("❌ Error updating title:", error);
           }
         }
-      } catch (error) {
-        console.error("💥 Fetch error:", error);
-        setIsTyping(false); // ✅ Hide typing on error
-        const errorMessage = {
-          text: `Sorry, there was an error: ${error.message}. ${
-            isGuestUser
-              ? "Guest mode is active - your chat won't be saved."
-              : ""
-          }`,
-          sender: "bot",
-        };
-        setMessages((prev) => [...prev, errorMessage]);
       }
+    } catch (error) {
+      console.error("💥 Fetch error:", error);
+      setIsTyping(false); // ✅ Hide typing on error
+      const errorMessage = {
+        text: `Sorry, there was an error: ${error.message}. ${
+          isGuestUser
+            ? "Guest mode is active - your chat won't be saved."
+            : ""
+        }`,
+        sender: "bot",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     }
-  };
+  }
+};
 
   const isGenericTitle = (title) => {
     if (!title) return true;
@@ -703,30 +769,60 @@ function ChatBot() {
 
   const handleLogout = async () => {
     console.log("🚪 LOGOUT INITIATED");
-    localStorage.removeItem("currentSessionId");
+
+      const cleanupStorage = () => {
+    // Clear localStorage completely
     localStorage.clear();
+    
+    // Clear sessionStorage completely  
     sessionStorage.clear();
 
-    console.log("✅ Storage cleared:", {
-      localStorage: localStorage.length,
-      sessionStorage: sessionStorage.length,
+       Object.keys(localStorage).forEach(key => {
+      if (key.includes('guest') || key.includes('auth') || key.includes('session') || key.includes('user')) {
+        localStorage.removeItem(key);
+      }
     });
-
-    sessionStorage.setItem("logoutInProgress", "true");
-
-    try {
-      await logoutUser();
-      console.log("✅ Supabase logout complete");
-    } catch (error) {
-      console.error("⚠️ Supabase logout error (continuing anyway):", error);
-    }
-
-    sessionStorage.removeItem("logoutInProgress");
-    window.location.href = "/login";
+    
+    Object.keys(sessionStorage).forEach(key => {
+      sessionStorage.removeItem(key);
+    });
+    
+    console.log("✅ Storage completely cleared");
   };
+   try {
+    // ✅ Perform comprehensive cleanup FIRST
+    cleanupStorage();
+    
+    // ✅ Then call Supabase logout
+    await logoutUser();
+    console.log("✅ Supabase logout complete");
+    
+  } catch (error) {
+    console.error("⚠️ Supabase logout error (continuing anyway):", error);
+  } finally {
+    // ✅ Force hard navigation to login page
+    console.log("🔀 Force navigating to login page");
+    window.location.href = "/login";
+    window.location.reload(); // Double ensure cleanup
+  }
+};
+
+
+
+      Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('guest_messages_') || key.startsWith('local_messages_')) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  
 
   const handleNewChat = async () => {
     console.log("🆕 handleNewChat called - Starting new chat");
+     if (currentSessionId && (currentSessionId.startsWith("guest-") || currentSessionId.startsWith("local-"))) {
+    localStorage.removeItem(`guest_messages_${currentSessionId}`);
+  }
+
     localStorage.removeItem("currentSessionId");
     
     if (isListening) {
@@ -770,6 +866,8 @@ function ChatBot() {
         const guestSessionId = `guest-${Date.now()}`;
         console.log("🎭 Guest session created:", guestSessionId);
         setCurrentSessionId(guestSessionId);
+        localStorage.setItem("currentSessionId", guestSessionId);
+
       }
 
       setMessages([
@@ -784,6 +882,8 @@ function ChatBot() {
       const fallbackSessionId = `local-${Date.now()}`;
       console.log("🔄 Falling back to local session:", fallbackSessionId);
       setCurrentSessionId(fallbackSessionId);
+       localStorage.setItem("currentSessionId", fallbackSessionId);
+
       setMessages([
         {
           text: "Hello! Welcome to Samriddhi ChatBot. Ask me anything.",
@@ -886,14 +986,22 @@ function ChatBot() {
     e.stopPropagation();
 
     try {
+      if (sessionId.startsWith("guest-") || sessionId.startsWith("local-")) {
+      localStorage.removeItem(`guest_messages_${sessionId}`);
+      console.log("🗑️ Guest session data removed from localStorage");
+      }else{
+
       const { error } = await deleteChatSession(sessionId);
 
       if (error) throw error;
+      }
 
       setChatHistory((prev) => prev.filter((chat) => chat.id !== sessionId));
 
       if (currentSessionId === sessionId) {
         setCurrentSessionId(null);
+        localStorage.removeItem("currentSessionId");
+        
         setMessages([
           {
             text: "Hello! Welcome to Samriddhi ChatBot. Ask me anything.",
@@ -1262,7 +1370,7 @@ function ChatBot() {
           </div>
         </div>
 
-        {/* Chat Container */}
+      
         <div className="chat-container">
           <div className="messages">
             {messages.map((msg, index) => (
@@ -1382,7 +1490,7 @@ function ChatBot() {
             </button>
           </div>
 
-          {/* Speech Recognition Status */}
+        
           {isListening && (
             <div className="listening-status">
               <div className="pulse-dot" />
@@ -1398,7 +1506,7 @@ function ChatBot() {
         </div>
       </div>
 
-      {/* Password Change Modal */}
+   
       {showChangePasswordModal && (
         <div
           className="modal-overlay"

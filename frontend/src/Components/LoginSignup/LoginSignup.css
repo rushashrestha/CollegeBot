@@ -131,6 +131,77 @@
   color: white !important;
   transform: translateY(-1px);
 }
+/* ✅ Password Input Group Styles */
+.password-input-group {
+  position: relative;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  padding-right: 3rem !important; /* Space for the eye icon */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.password-toggle-btn:hover:not(:disabled) {
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+.password-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.password-toggle-icon {
+  transition: color 0.2s ease;
+}
+
+/* Dark mode support for password toggle */
+.dark-mode .password-toggle-btn:hover:not(:disabled) {
+  color: #d1d5db;
+  background-color: #374151;
+}
+
+/* Focus states for better accessibility */
+.password-toggle-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Responsive design for password field */
+@media (max-width: 480px) {
+  .password-input {
+    padding-right: 2.5rem !important;
+  }
+  
+  .password-toggle-btn {
+    right: 0.5rem;
+  }
+  
+  .password-toggle-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
 
 /* Animation */
 @keyframes fadeInUp {
@@ -367,3 +438,8 @@
     font-size: 13px;
   }
 }
+#sonner-root {
+  z-index: 999999 !important;
+  position: relative;
+}
+

@@ -1,3 +1,4 @@
+//supabase.js
 import { createClient } from '@supabase/supabase-js';
 
 // Vite uses import.meta.env, not process.env

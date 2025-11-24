@@ -1,16 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginUser, getUserRole } from "../../utils/auth"; // ✅ Import getUserRole
+import { loginUser, getUserRole } from "../../utils/auth";
+import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react"; // ✅ ADD: Lucide icons
 import "react-toastify/dist/ReactToastify.css";
 import "./LoginSignup.css";
 
 // ✅ Schema for validation
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -19,6 +20,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordChangeAlert, setShowPasswordChangeAlert] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false); 
 
   const {
     register,
@@ -28,17 +30,97 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
+  // ✅ Toggle password visibility
+   const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  // ✅ COMPLETELY FIXED: Guest login with comprehensive cleanup
+  const handleGuestLogin = () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    console.log("🎭 Starting FRESH guest login process...");
+
+    const performPreLoginCleanup = () => {
+      // Clear all storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Force clear any residual data
+      Object.keys(localStorage).forEach(key => localStorage.removeItem(key));
+      Object.keys(sessionStorage).forEach(key => sessionStorage.removeItem(key));
+      
+      console.log("✅ Pre-login cleanup completed");
+    };
+
+    try {
+      // ✅ Clean up everything first
+      performPreLoginCleanup();
+      
+      // ✅ Create FRESH guest session data
+      const guestSessionId = `guest-${Date.now()}`;
+      const authBufferData = {
+        userRole: "guest",
+        isAuthenticated: "true",
+        timestamp: Date.now(),
+        sessionId: guestSessionId,
+        isFresh: true
+      };
+
+      localStorage.setItem("userRole", "guest");
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("currentSessionId", guestSessionId);
+      
+      sessionStorage.setItem("authBuffer", JSON.stringify(authBufferData));
+
+      console.log("✅ Fresh guest authentication set:", {
+        sessionId: guestSessionId,
+        userRole: localStorage.getItem("userRole"),
+        isAuthenticated: localStorage.getItem("isAuthenticated")
+      });
+
+      const welcomeMessages = [{
+        text: "Hello! Welcome to Samriddhi ChatBot. Ask me anything.",
+        sender: "bot",
+        timestamp: new Date().toISOString()
+      }];
+      
+      localStorage.setItem(`guest_messages_${guestSessionId}`, JSON.stringify(welcomeMessages));
+
+      // ✅ Use shadcn/sonner toast for success
+      toast.success("Starting guest session...");
+      
+      // ✅ Use hard navigation instead of React Router navigation
+      console.log("🚀 Performing hard navigation to chat...");
+      setTimeout(() => {
+        window.location.href = "/chat";
+      }, 100);
+
+    } catch (error) {
+      console.error("❌ Error in guest login:", error);
+      // ✅ Use shadcn/sonner toast for error
+      toast.error("Failed to start guest session. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
   const onSubmit = async (data) => {
     const { email, password } = data;
     setIsLoading(true);
-
+    
+    const loadingToast = toast.loading("Signing you in...");
+    
     try {
-      // ✅ Clear any old auth buffer first
       sessionStorage.removeItem("authBuffer");
 
-      // Check for admin login first (preserve original admin functionality)
-      if (email === "admin@samriddhi.edu.np" && password === "admin123") {
-        // ✅ Set BOTH localStorage AND sessionStorage
+      if (email === import.meta.env.ADMIN_EMAIL && password === import.meta.env.ADMIN_PASSWORD) {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('guest_messages_') || key.startsWith('guest-')) {
+            localStorage.removeItem(key);
+          }
+        });
+
         const authData = {
           userRole: "admin",
           userEmail: email,
@@ -49,14 +131,11 @@ const Login = () => {
         localStorage.setItem("userRole", "admin");
         localStorage.setItem("adminEmail", email);
         localStorage.setItem("isAuthenticated", "true");
-
-        // Session storage as immediate buffer
         sessionStorage.setItem("authBuffer", JSON.stringify(authData));
 
         console.log("✅ Admin auth set, navigating...");
+        toast.dismiss(loadingToast);
         toast.success("Admin login successful!");
-
-        // Navigate immediately
         navigate("/admin", { replace: true });
         setIsLoading(false);
         return;
@@ -66,104 +145,151 @@ const Login = () => {
       console.log("🔐 Attempting Supabase login for:", email);
       const { data: authData, error } = await loginUser(email, password);
 
+      // ✅ Handle Supabase error response - FIXED FOR BACKEND RESPONSE
       if (error) {
         console.error("❌ Supabase Login Failed:", error);
-        // Clear any partial auth data
+        toast.dismiss(loadingToast);
         sessionStorage.removeItem("authBuffer");
-        toast.error(
-          String(error) || "Login failed. Invalid email or password."
-        );
+        
+        let errorMessage = "Invalid email or password. Please try again.";
+        
+        // ✅ SPECIFIC HANDLING FOR BACKEND RESPONSE
+        if (error.code === "invalid_credentials" || error.message?.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password.";
+        } else if (error.message?.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email address before logging in.";
+        } else if (error.message?.includes("Too many requests")) {
+          errorMessage = "Too many login attempts. Please try again later.";
+        }
+        
+        toast.error("Login Failed", {
+          description: errorMessage,
+          duration: 4000,
+        });
+        
         setIsLoading(false);
         return;
       }
 
-      if (authData?.user) {
-        console.log("✅ Supabase login successful, fetching role...");
+      // ✅ Check if authData exists and has user - SHOW INVALID CREDENTIALS INSTEAD
+      if (!authData?.user) {
+        console.error("❌ No user data received from Supabase");
+        toast.dismiss(loadingToast);
+        toast.error("Login Failed", {
+          description: "Invalid email or password.",
+          duration: 4000,
+        });
+        setIsLoading(false);
+        return;
+      }
 
-        // ✅ FIX: Get the actual user role from database
-        const userRole = await getUserRole(email);
-        console.log("✅ User role detected:", userRole);
+      console.log("✅ Supabase login successful, fetching role...");
 
-        // ✅ Check if role was found
-        if (!userRole || userRole === "guest") {
-          console.error("❌ No valid role found for user");
-          toast.error("Account not found in system. Please contact admin.");
-          sessionStorage.removeItem("authBuffer");
-          setIsLoading(false);
-          return;
+      // Clear guest data
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('guest_messages_') || key.startsWith('guest-')) {
+          localStorage.removeItem(key);
         }
+      });
 
-        // ✅ Set BOTH localStorage AND sessionStorage immediately
-        const authBufferData = {
-          userRole: userRole,
-          userEmail: email,
-          isAuthenticated: "true",
-          userId: authData.user.id,
-          timestamp: Date.now(),
-        };
+      // Get user role
+      const userRole = await getUserRole(email);
+      console.log("✅ User role detected:", userRole);
 
-        localStorage.setItem("userRole", userRole);
-        localStorage.setItem("userEmail", email);
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("supabase_user_id", authData.user.id);
+      // Check if role was found - SHOW INVALID CREDENTIALS INSTEAD
+      if (!userRole || userRole === "guest") {
+        console.error("❌ No valid role found for user");
+        toast.dismiss(loadingToast);
+        toast.error("Login Failed", {
+          description: "Invalid email or password.",
+          duration: 4000,
+        });
+        sessionStorage.removeItem("authBuffer");
+        setIsLoading(false);
+        return;
+      }
 
-        // Session storage as immediate buffer
-        sessionStorage.setItem("authBuffer", JSON.stringify(authBufferData));
+      // Set authentication data
+      const authBufferData = {
+        userRole: userRole,
+        userEmail: email,
+        isAuthenticated: "true",
+        userId: authData.user.id,
+        timestamp: Date.now(),
+      };
 
-        console.log("✅ Auth data set:", authBufferData);
+      localStorage.setItem("userRole", userRole);
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("supabase_user_id", authData.user.id);
+      sessionStorage.setItem("authBuffer", JSON.stringify(authBufferData));
 
-        // Check if user needs to change password (check database first, then localStorage)
-        let hasChangedPassword = localStorage.getItem(
-          `password_changed_${email}`
-        );
+      console.log("✅ Auth data set:", authBufferData);
 
-        // If not in localStorage, check database
-        if (!hasChangedPassword) {
-          try {
-            const tableName =
-              userRole === "student"
-                ? "students_data"
-                : userRole === "teacher"
-                ? "teachers_data"
-                : null;
+      // Check if user needs to change password
+      let hasChangedPassword = localStorage.getItem(`password_changed_${email}`);
 
-            if (tableName) {
-              const response = await fetch(
-                "http://localhost:5000/api/check-password-changed",
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email, table: tableName }),
-                }
-              );
+      // If not in localStorage, check database
+      if (!hasChangedPassword) {
+        try {
+          const tableName = userRole === "student" ? "students_data" : 
+                           userRole === "teacher" ? "teachers_data" : null;
 
+          if (tableName) {
+            const response = await fetch(
+              "http://localhost:5000/api/check-password-changed",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, table: tableName }),
+              }
+            );
+
+            if (response.ok) {
               const data = await response.json();
               if (data.password_changed) {
-                // Update localStorage so we don't check again
                 localStorage.setItem(`password_changed_${email}`, "true");
                 hasChangedPassword = "true";
               }
             }
-          } catch (error) {
-            console.log("⚠️ Could not check database, using localStorage only");
           }
-        }
-
-        if (!hasChangedPassword) {
-          // First time login - show password change alert
-          setNewUserEmail(email);
-          setShowPasswordChangeAlert(true);
-          setIsLoading(false);
-        } else {
-          // Password already changed - proceed normally
-          toast.success(`Login successful as ${userRole}!`);
-          navigate("/chat", { replace: true });
-          setIsLoading(false);
+        } catch (error) {
+          console.log("⚠️ Could not check database, using localStorage only");
         }
       }
+
+      // FINAL SUCCESS PATH - Always dismiss loading toast
+      toast.dismiss(loadingToast);
+
+      if (!hasChangedPassword) {
+        setNewUserEmail(email);
+        setShowPasswordChangeAlert(true);
+        setIsLoading(false);
+      } else {
+        toast.success(`Welcome back!`, {
+          description: `Logged in successfully as ${userRole}`,
+          duration: 3000,
+        });
+        navigate("/chat", { replace: true });
+        setIsLoading(false);
+      }
+
     } catch (error) {
+      // CATCH ALL ERRORS - Always dismiss loading toast
       console.error("💥 Login component catch block error:", error);
-      toast.error("Something went wrong. Please check your connection.");
+      toast.dismiss(loadingToast);
+      
+      let errorMessage = "Something went wrong. Please check your connection.";
+      
+      if (error.message?.includes("Failed to fetch") || error.message?.includes("Network")) {
+        errorMessage = "Network error. Please check your internet connection.";
+      }
+      
+      toast.error("Connection Error", {
+        description: errorMessage,
+        duration: 4000,
+      });
+      
       sessionStorage.removeItem("authBuffer");
       setIsLoading(false);
     }
@@ -171,7 +297,10 @@ const Login = () => {
 
   const handleSkipPasswordChange = () => {
     setShowPasswordChangeAlert(false);
-    toast.success(`Login successful!`);
+    
+    // Use shadcn/sonner toast
+    toast.success("Login successful!");
+    
     navigate("/chat", { replace: true });
   };
 
@@ -179,13 +308,15 @@ const Login = () => {
     setShowPasswordChangeAlert(false);
     // Mark that user should see change password modal
     sessionStorage.setItem("show_password_modal", "true");
-    toast.success(`Login successful! Please change your password.`);
+    
+    // Use shadcn/sonner toast
+    toast.success("Login successful! Please change your password.");
+    
     navigate("/chat", { replace: true });
   };
 
   return (
     <div className="login-container">
-      <ToastContainer toastStyle={{ marginTop: "70px" }} />
       <div className="form-section">
         <h2>Login to AskSamriddhi</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="login-form">
@@ -201,18 +332,38 @@ const Login = () => {
               <p className="error-text">{errors.email.message}</p>
             )}
           </div>
-          <div className="input-group">
-            <input
-              type="password"
-              placeholder="Password"
-              {...register("password")}
-              className="login-input"
-              disabled={isLoading}
-            />
+          
+          {/* ✅ UPDATED: Password field with Lucide eye icons */}
+          <div className="input-group password-input-group">
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                {...register("password")}
+                className="login-input password-input"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={togglePasswordVisibility}
+                disabled={isLoading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  // Eye off icon (password hidden)
+                  <Eye size={20} className="password-toggle-icon" />
+                ) : (
+                  // Eye icon (password visible)
+                  <EyeOff size={20} className="password-toggle-icon" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="error-text">{errors.password.message}</p>
             )}
           </div>
+          
           <button type="submit" className="login-btn" disabled={isLoading}>
             {isLoading ? "Logging in..." : "Continue"}
           </button>
@@ -222,33 +373,15 @@ const Login = () => {
             <p>or</p>
             <button
               className="guest-btn"
-              onClick={() => {
-                // ✅ Set BOTH localStorage AND sessionStorage immediately
-                const authBufferData = {
-                  userRole: "guest",
-                  isAuthenticated: "true",
-                  timestamp: Date.now(),
-                };
-
-                localStorage.setItem("userRole", "guest");
-                localStorage.setItem("isAuthenticated", "true");
-
-                // Session storage as immediate buffer
-                sessionStorage.setItem(
-                  "authBuffer",
-                  JSON.stringify(authBufferData)
-                );
-
-                // Navigate immediately
-                navigate("/chat", { replace: true });
-              }}
+              onClick={handleGuestLogin}
               disabled={isLoading}
             >
-              Continue as Guest
+              {isLoading ? "Loggin in..." : "Continue as Guest"}
             </button>
           </div>
         </div>
       </div>
+      
       {showPasswordChangeAlert && (
         <div className="password-alert-overlay">
           <div className="password-alert-modal">
@@ -373,3 +506,4 @@ const Login = () => {
 };
 
 export default Login;
+

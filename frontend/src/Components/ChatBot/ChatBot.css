@@ -15,7 +15,7 @@
   color: #e1e1e1;
 }
 
-/* Sidebar - Open by default */
+/* Sidebar - Mobile First Approach */
 .sidebar {
   width: 280px;
   height: 100vh;
@@ -26,7 +26,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  transform: translateX(0);
+  transform: translateX(-100%);
   transition: transform 0.3s ease;
   z-index: 1000;
   overflow: hidden;
@@ -41,19 +41,25 @@
   transform: translateX(0);
 }
 
-/* Closed state */
-.sidebar:not(.open) {
-  transform: translateX(-100%);
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
 }
 
-.sidebar-overlay {
-  display: none;
+.sidebar.open + .sidebar-overlay {
+  display: block;
 }
 
 /* Sidebar Header */
 .sidebar-header {
   padding: 1rem;
-  /* border-bottom: 1px solid #e0e0e0; */
   flex-shrink: 0;
 }
 
@@ -89,7 +95,7 @@
   background-color: #2d2d2d;
 }
 
-/* Chat History with hidden scrollbar */
+/* Chat History */
 .chat-history {
   flex: 1;
   padding: 0.5rem;
@@ -97,7 +103,6 @@
   overflow-x: hidden;
 }
 
-/* Hide scrollbar for chat history */
 .chat-history::-webkit-scrollbar {
   display: none;
 }
@@ -110,7 +115,7 @@
 .chat-history h3 {
   font-size: 0.75rem;
   color: #6b7280;
-  margin: 0.5rem 0.5rem 0.5rem 0.5rem;
+  margin: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -320,22 +325,15 @@
   color: white;
 }
 
-/* Main Content - Adjusts based on sidebar state */
+/* Main Content */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 280px;
-  transition: margin-left 0.3s ease;
-  width: calc(100% - 280px);
+  width: 100%;
   height: 100vh;
   overflow: hidden;
-}
-
-/* When sidebar is closed */
-.app-container .sidebar:not(.open) ~ .main-content {
-  margin-left: 0;
-  width: 100%;
+  transition: margin-left 0.3s ease;
 }
 
 /* Header */
@@ -416,7 +414,7 @@
   background-color: #2d2d2d;
 }
 
-/* Chat Container - Centered like Claude */
+/* Chat Container */
 .chat-container {
   flex: 1;
   display: flex;
@@ -438,7 +436,6 @@
   gap: 1.5rem;
 }
 
-/* Hide scrollbar but keep functionality */
 .messages::-webkit-scrollbar {
   display: none;
 }
@@ -491,9 +488,8 @@
   color: #ececec;
 }
 
-/* Input Container - Centered */
+/* Input Container */
 .input-container {
-  
   position: relative;
   padding: 1.5rem;
   background-color: transparent;
@@ -515,7 +511,7 @@
   padding: 0.5rem 0.75rem;
   transition: all 0.2s ease;
   box-shadow: 0 0 0 0 rgba(158, 118, 227, 0);
-  gap: 0.25rem; 
+  gap: 0.25rem;
 }
 
 .app-container.dark .input-wrapper {
@@ -559,8 +555,8 @@
   justify-content: center;
   transition: all 0.2s ease;
   color: #6b7280;
-  width: 36px;      /* Fixed width */
-  height: 36px;     /* Fixed height */
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
 }
 
@@ -598,8 +594,8 @@
   font-size: 0.875rem;
   font-weight: 500;
   margin-left: 0.5rem;
-   min-width: 70px;   /* Minimum width */
-  flex-shrink: 0; /* Prevent shrinking */
+  min-width: 70px;
+  flex-shrink: 0;
 }
 
 .send-btn:hover:not(:disabled) {
@@ -646,6 +642,7 @@
 .course-table-container {
   width: 100%;
   margin: 1rem 0;
+  overflow-x: auto;
 }
 
 .course-table-container h3 {
@@ -662,6 +659,7 @@
   border-radius: 0.5rem;
   overflow: hidden;
   border: 1px solid #e0e0e0;
+  min-width: 300px;
 }
 
 .app-container.dark .course-table {
@@ -712,6 +710,7 @@
 /* Formatted Message Styles */
 .formatted-message {
   line-height: 1.6;
+  overflow-wrap: break-word;
 }
 
 .formatted-message ul {
@@ -757,6 +756,296 @@
   font-size: 1rem;
 }
 
+/* Change Password Button */
+.change-password-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  color: var(--text-color, #374151);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.change-password-btn:hover {
+  background: #f3f4f6;
+  border-color: #9e76e3;
+  color: #9e76e3;
+  transform: translateX(4px);
+}
+
+.app-container.dark .change-password-btn {
+  border-color: #404040;
+  color: #e1e1e1;
+}
+
+.app-container.dark .change-password-btn:hover {
+  background: #2d2d2d;
+  border-color: #9e76e3;
+  color: #9e76e3;
+}
+
+/* Password Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+  padding: 1rem;
+}
+
+.password-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.3s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.app-container.dark .password-modal {
+  background: #1e1e1e;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.app-container.dark .modal-header {
+  border-bottom-color: #404040;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.app-container.dark .modal-header h3 {
+  color: #e1e1e1;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 32px;
+  cursor: pointer;
+  color: #6b7280;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.close-modal:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.app-container.dark .close-modal:hover {
+  background: #2d2d2d;
+  color: #e1e1e1;
+}
+
+.close-modal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #374151;
+}
+
+.app-container.dark .form-group label {
+  color: #e1e1e1;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  color: #111827;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.app-container.dark .form-group input {
+  background: #2d2d2d;
+  border-color: #404040;
+  color: #e1e1e1;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.app-container.dark .form-group input:focus {
+  border-color: #9e76e3;
+  box-shadow: 0 0 0 3px rgba(158, 118, 227, 0.2);
+}
+
+.form-group input:disabled {
+  background: #f9fafb;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.app-container.dark .form-group input:disabled {
+  background: #374151;
+}
+
+.password-strength {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #9e76e3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #8b65d6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(158, 118, 227, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 14px;
+  margin-top: 12px;
+  padding: 10px;
+  background: #fef2f2;
+  border-radius: 6px;
+  border-left: 3px solid #ef4444;
+}
+
+.app-container.dark .error-message {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+.success-message {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.success-message svg {
+  margin: 0 auto 16px;
+  display: block;
+}
+
+.success-message p {
+  color: #10b981;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px !important;
+  background: var(--bot-message-bg);
+  border-radius: 18px;
+  max-width: fit-content;
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+}
+
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4f46e5;
+  opacity: 0.4;
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.dark .typing-dots span {
+  background-color: #818cf8;
+}
+
+.light .typing-dots span {
+  background-color: #4f46e5;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
@@ -796,148 +1085,15 @@
   }
 }
 
-/* Responsive Styles */
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0 !important;
-  }
-
-  .sidebar {
-    width: 100%;
-    max-width: 320px;
-  }
-
-  .header {
-    padding: 1rem;
-  }
-
-  .header h1 {
-    font-size: 1.125rem;
-  }
-
-  .messages {
-    max-width: 100%;
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  .message {
-    max-width: 90%;
-    padding: 0.875rem 1.25rem;
-  }
-
-  .input-container {
-    padding: 1rem;
-  }
-
-  .input-wrapper {
-    max-width: 100%;
-  }
-
-  .send-btn {
-    padding: 0.5rem 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .messages {
-    padding: 0.75rem;
-  }
-
-  .message {
-    font-size: 0.9375rem;
-  }
-
-  .input-wrapper input {
-    font-size: 0.875rem;
-  }
-}
-
-
-
-
-.dismiss-btn {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-}
-
-.dismiss-btn:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
+@keyframes typing-bounce {
+  0%, 60%, 100% {
     transform: translateY(0);
+    opacity: 0.4;
   }
-}
-
-/* Change Password Button in Profile Dropdown */
-.change-password-btn {
-  width: 100%;
-  padding: 12px 16px;
-  background: transparent;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
-  color: var(--text-color, #374151);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.change-password-btn:hover {
-  background: var(--hover-bg, #f3f4f6);
-  border-color: #667eea;
-  color: #667eea;
-  transform: translateX(4px);
-}
-
-.change-password-btn svg {
-  flex-shrink: 0;
-}
-
-/* Password Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
+  30% {
+    transform: translateY(-10px);
     opacity: 1;
   }
-}
-
-.password-modal {
-  background: var(--bg-color, white);
-  border-radius: 16px;
-  padding: 28px;
-  width: 90%;
-  max-width: 440px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  animation: slideUp 0.3s ease-out;
 }
 
 @keyframes slideUp {
@@ -951,263 +1107,357 @@
   }
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+/* ==================== RESPONSIVE BREAKPOINTS ==================== */
+
+/* Large tablets and small desktops (1024px and below) */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 260px;
+  }
+  
+  .messages {
+    max-width: 42rem;
+    padding: 1.5rem 1rem;
+  }
+  
+  .input-wrapper {
+    max-width: 42rem;
+  }
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-color, #111827);
-}
-
-.close-modal {
-  background: none;
-  border: none;
-  font-size: 32px;
-  cursor: pointer;
-  color: var(--text-color, #6b7280);
-  line-height: 1;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.close-modal:hover {
-  background: var(--hover-bg, #f3f4f6);
-  color: var(--text-color, #111827);
-}
-
-.close-modal:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  font-size: 14px;
-  color: var(--text-color, #374151);
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px 14px;
-  border: 2px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
-  background: var(--input-bg, white);
-  color: var(--text-color, #111827);
-  font-size: 14px;
-  transition: all 0.2s;
-  box-sizing: border-box;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-group input:disabled {
-  background: var(--disabled-bg, #f9fafb);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.password-strength {
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.submit-btn {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 15px;
-  transition: all 0.2s;
-  margin-top: 8px;
-}
-
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 14px;
-  margin-top: 12px;
-  padding: 10px;
-  background: #fef2f2;
-  border-radius: 6px;
-  border-left: 3px solid #ef4444;
-}
-
-.success-message {
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.success-message svg {
-  margin: 0 auto 16px;
-  display: block;
-}
-
-.success-message p {
-  color: #10b981;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-}
-
-/* Dark mode support */
-.dark .password-modal {
-  background: #1f2937;
-}
-
-.dark .modal-header {
-  border-bottom-color: #374151;
-}
-
-.dark .form-group input {
-  background: #111827;
-  border-color: #374151;
-  color: #f9fafb;
-}
-
-.dark .form-group input:focus {
-  border-color: #667eea;
-}
-
-.dark .error-message {
-  background: #7f1d1d;
-  color: #fecaca;
-}
-
-.dark .change-password-btn {
-  border-color: #374151;
-  color: #d1d5db;
-}
-
-.dark .change-password-btn:hover {
-  background: #374151;
-  color: #667eea;
-}
-
-/* Responsive design */
-@media (max-width: 640px) {
- 
+/* Tablets (768px and below) */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  .header {
+    padding: 1rem;
+  }
+  
+  .header h1 {
+    font-size: 1.125rem;
+  }
+  
+  .messages {
+    max-width: 100%;
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .message {
+    max-width: 90%;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+  
+  .input-container {
+    padding: 1rem;
+  }
+  
+  .input-wrapper {
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+  
+  .send-btn {
+    padding: 0.5rem 1rem;
+    min-width: 60px;
+    font-size: 0.8125rem;
+  }
+  
+  .mic-btn {
+    width: 32px;
+    height: 32px;
+  }
   
   .password-modal {
     padding: 20px;
-    width: 95%;
+    margin: 1rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.125rem;
   }
 }
 
-/* ✅ ADD THESE STYLES TO YOUR ChatBot.css FILE */
-
-/* Typing indicator container */
-.typing-indicator {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 16px !important;
-  background: var(--bot-message-bg);
-  border-radius: 18px;
-  max-width: fit-content;
-}
-
-/* Typing dots container */
-.typing-dots {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 20px;
-}
-
-/* Individual dots */
-.typing-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #4f46e5;
-  opacity: 0.4;
-  animation: typing-bounce 1.4s infinite ease-in-out;
-}
-
-/* Stagger the animation for each dot */
-.typing-dots span:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.typing-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-/* Bounce animation */
-@keyframes typing-bounce {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: 0.4;
+/* Large phones (640px and below) */
+@media (max-width: 640px) {
+  .sidebar {
+    max-width: 280px;
   }
-  30% {
-    transform: translateY(-10px);
-    opacity: 1;
+  
+  .header {
+    padding: 0.875rem 1rem;
+  }
+  
+  .header h1 {
+    font-size: 1rem;
+  }
+  
+  .messages {
+    padding: 0.75rem;
+    gap: 0.875rem;
+  }
+  
+  .message {
+    max-width: 95%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .input-container {
+    padding: 0.875rem;
+  }
+  
+  .input-wrapper input {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+  
+  .course-table th,
+  .course-table td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  
+  .profile-dropdown {
+    padding: 0.75rem;
+  }
+  
+  .chat-history-item {
+    padding: 0.625rem;
   }
 }
 
-/* Dark mode support */
-.dark .typing-dots span {
-  background-color: #818cf8;
-}
-
-.light .typing-dots span {
-  background-color: #4f46e5;
-}
-
-/* Fade in animation */
-.message.typing-indicator {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+/* Small phones (480px and below) */
+@media (max-width: 480px) {
+  .sidebar {
+    max-width: 100%;
+    border-radius: 0;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .header {
+    padding: 0.75rem;
+  }
+  
+  .header-left {
+    gap: 0.75rem;
+  }
+  
+  .header h1 {
+    font-size: 0.9375rem;
+  }
+  
+  .messages {
+    padding: 0.5rem;
+    gap: 0.75rem;
+  }
+  
+  .message {
+    max-width: 98%;
+    padding: 0.625rem 0.875rem;
+    border-radius: 1.25rem;
+  }
+  
+  .input-container {
+    padding: 0.75rem;
+  }
+  
+  .input-wrapper {
+    border-radius: 1.5rem;
+    padding: 0.375rem;
+  }
+  
+  .input-wrapper input {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  
+  .send-btn {
+    padding: 0.5rem 0.875rem;
+    min-width: 55px;
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+  }
+  
+  .mic-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0.375rem;
+  }
+  
+  .listening-status {
+    font-size: 0.75rem;
+    bottom: -25px;
+  }
+  
+  .password-modal {
+    padding: 16px;
+    margin: 0.5rem;
+  }
+  
+  .modal-header {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+  }
+  
+  .modal-header h3 {
+    font-size: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-group input {
+    padding: 10px 12px;
+    font-size: 0.875rem;
+  }
+  
+  .submit-btn {
+    padding: 12px;
+    font-size: 0.875rem;
+  }
+  
+  /* Adjust chat history items for very small screens */
+  .chat-history-item {
+    padding: 0.5rem;
+  }
+  
+  .chat-title {
+    font-size: 0.8125rem;
+  }
+  
+  .chat-timestamp {
+    font-size: 0.6875rem;
+  }
+  
+  .profile-trigger span {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Very small phones (360px and below) */
+@media (max-width: 360px) {
+  .header h1 {
+    font-size: 0.875rem;
+  }
+  
+  .message {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  
+  .input-wrapper {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .input-wrapper input {
+    order: 1;
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+  
+  .mic-btn {
+    order: 2;
+  }
+  
+  .send-btn {
+    order: 3;
+    flex: 1;
+    margin-left: 0;
+  }
+  
+  .course-table {
+    font-size: 0.75rem;
+  }
+  
+  .course-table th,
+  .course-table td {
+    padding: 0.375rem 0.5rem;
+  }
+}
+
+/* Landscape mode for mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-container {
+    height: 100vh;
+  }
+  
+  .sidebar {
+    overflow-y: auto;
+  }
+  
+  .chat-history {
+    max-height: 40vh;
+  }
+  
+  .messages {
+    max-height: 60vh;
+    padding: 1rem;
+  }
+  
+  .input-container {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .message {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .message,
+  .input-wrapper,
+  .password-modal,
+  .typing-dots span {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Dark mode media query for system preference */
+@media (prefers-color-scheme: dark) {
+  .app-container:not(.light) {
+    background-color: #1e1e1e;
+    color: #e1e1e1;
+  }
+  
+  .app-container:not(.light) .sidebar {
+    background-color: #171717;
+    border-right-color: #2d2d2d;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar,
+  .header,
+  .input-container {
+    display: none;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .messages {
+    max-width: 100%;
+    padding: 0;
+  }
+  
+  .message {
+    max-width: 100%;
+    break-inside: avoid;
   }
 }

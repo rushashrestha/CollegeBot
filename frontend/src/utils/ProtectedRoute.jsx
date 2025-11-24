@@ -1,3 +1,4 @@
+//ProtectedRoute.jsx
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getCurrentSession } from "./auth.js";
