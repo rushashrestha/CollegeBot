@@ -59,8 +59,6 @@ class CollegeQuerySystem:
         self.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         self.storage_bucket = "college-documents"
 
-        
-
         self.programs = {
             "csit": {
                 "name": "Bachelor of Science in Computer Science and IT", 
@@ -143,6 +141,9 @@ class CollegeQuerySystem:
         if self._is_institutional_query(question):
             return True, None
         
+        if user_role in ["teacher", "admin"]:
+            return True, None
+        
         # Guest access restrictions
         if user_role == "guest":
             # Check if asking for specific person's detailed info
@@ -150,7 +151,8 @@ class CollegeQuerySystem:
                 "email of", "phone of", "contact of", "address of", 
                 "roll no", "roll number", "symbol number", "registration number", 
                 "dob of", "date of birth of", "birthday of", "gender of",
-                "batch of", "section of", "joined"
+                "batch of", "section of", "joined",
+                "gpa", "cgpa", "performance", "marks", "grades", "attendance"
             ]
             
             has_restricted = any(pattern in q_lower for pattern in restricted_patterns)
@@ -231,6 +233,8 @@ class CollegeQuerySystem:
             r'who\s+is\s+',
             r'information\s+about\s+',
             r'details\s+about\s+',
+            r'performance\s+of\s+',
+            r'how\s+is\s+',
             r'email\s+of\s+',
             r'email\s+for\s+',
             r'phone\s+number\s+of\s+',
@@ -250,6 +254,12 @@ class CollegeQuerySystem:
             r'gender\s+of\s+',
             r'batch\s+of\s+',
             r'section\s+of\s+',
+            r'gpa\s+of\s+',
+            r'cgpa\s+of\s+',
+            r'attendance\s+of\s+',
+            r'grades?\s+of\s+',
+            r'marks?\s+of\s+',
+            r'doing\s+',
             r'\bthe\b',
             r'\bstudying\b',
             r'\bstudy\b',
@@ -270,28 +280,100 @@ class CollegeQuerySystem:
         
         words = cleaned.split()
         if 1 <= len(words) <= 3:
-            return ' '.join(words).strip()
-        
+            result = ' '.join(words).strip()
+            print(f"🔤 Extracted name: '{result}'")
+            return result
+            
+        print(f"🔤 No name extracted from: '{cleaned}'")
+
         return None
 
     def _search_person(self, name):
         """Search for a person in both teachers and students tables"""
         if not name or len(name) < 2:
             return None
+        print(f"🔍 Searching for person: '{name}'")
             
         students = self._query_supabase("students_data", params={"name": f"ilike.%{name}%"})
+        print(f"📊 Students found: {len(students)}")
         if students:
+            print(f"🎯 Student match: {students[0].get('name')}")
             return {"type": "student", "data": students[0]}
         
         teachers = self._query_supabase("teachers_data", params={"name": f"ilike.%{name}%"})
+        print(f"📊 Teachers found: {len(teachers)}")
         if teachers:
+            print(f"🎯 Teacher match: {teachers[0].get('name')}")
             return {"type": "teacher", "data": teachers[0]}
             
+        print("❌ No person found")
         return None
     
-    
+    def _get_performance_summary(self, student_data):
+        """Generate natural language performance summary"""
+        name = _safe(student_data.get('name'))
+        gender = student_data.get('gender')
+        pronouns = _get_pronouns(gender)
+        
+        cgpa = student_data.get('cgpa')
+        gpa = student_data.get('gpa')
+        current_sem_gpa = student_data.get('current_semester_gpa')
+        attendance = student_data.get('attendance_percentage')
+        academic_status = student_data.get('academic_status', 'N/A')
+        credits_earned = student_data.get('total_credits_earned')
+        credits_remaining = student_data.get('credits_remaining')
+        
+        # Start building response
+        parts = []
+        
+        # Academic performance
+        if cgpa and cgpa != "N/A":
+            cgpa_val = float(cgpa)
+            if cgpa_val >= 3.5:
+                performance_desc = "doing excellent"
+            elif cgpa_val >= 3.0:
+                performance_desc = "performing well"
+            elif cgpa_val >= 2.5:
+                performance_desc = "doing okay"
+            else:
+                performance_desc = "struggling a bit"
+            
+            parts.append(f"{name} is {performance_desc} academically with a CGPA of {cgpa}")
+        
+        # Current semester performance
+        if current_sem_gpa and current_sem_gpa != "N/A":
+            parts.append(f"{pronouns['possessive_adj']} current semester GPA is {current_sem_gpa}")
+        
+        # Attendance
+        if attendance and attendance != "N/A":
+            attendance_val = float(attendance)
+            if attendance_val >= 85:
+                attendance_desc = "excellent"
+            elif attendance_val >= 75:
+                attendance_desc = "good"
+            elif attendance_val >= 60:
+                attendance_desc = "satisfactory"
+            else:
+                attendance_desc = "needs improvement"
+            
+            parts.append(f"{pronouns['subject']} has {attendance_desc} attendance at {attendance}%")
+        
+        # Academic status
+        if academic_status != "N/A":
+            parts.append(f"{pronouns['possessive_adj']} academic status is '{academic_status}'")
+        
+        # Credits progress
+        if credits_earned and credits_earned != "N/A":
+            parts.append(f"{pronouns['subject']} has earned {credits_earned} credits")
+            if credits_remaining and credits_remaining != "N/A":
+                parts.append(f"with {credits_remaining} credits remaining to graduate")
+        
+        if not parts:
+            return f"Performance data for {name} is not available yet."
+        
+        return ". ".join(parts) + "."
 
-    def _get_person_info(self, person_data):
+    def _get_person_info(self, person_data, include_performance=False):
         """Get formatted information about a person in natural, flowing sentences"""
         if person_data["type"] == "student":
             s = person_data["data"]
@@ -378,6 +460,11 @@ class CollegeQuerySystem:
             if extra_info:
                 response += " " + ", ".join(extra_info) + "."
             
+            # Add performance summary if requested
+            if include_performance:
+                performance_summary = self._get_performance_summary(s)
+                response += "\n\n" + performance_summary
+
             return response
             
         else:  # teacher
@@ -439,6 +526,57 @@ class CollegeQuerySystem:
                 if phone and phone != "N/A":
                     return f"{name}'s phone number is {phone}."
                 return f"I don't have phone information for {name}."
+            
+            # Performance queries
+            if any(word in q_lower for word in ["performance", "doing", "how is"]):
+                return self._get_performance_summary(data)
+            
+            # GPA/CGPA queries
+            if "gpa" in q_lower or "grade point" in q_lower:
+                if "current" in q_lower or "semester" in q_lower:
+                    gpa = data.get("current_semester_gpa")
+                    if gpa and gpa != "N/A":
+                        return f"{name}'s current semester GPA is {gpa}."
+                    return f"I don't have current semester GPA information for {name}."
+                elif "cgpa" in q_lower or "cumulative" in q_lower:
+                    cgpa = data.get("cgpa")
+                    if cgpa and cgpa != "N/A":
+                        return f"{name}'s CGPA is {cgpa}."
+                    return f"I don't have CGPA information for {name}."
+                else:
+                    # General GPA query
+                    cgpa = data.get("cgpa")
+                    if cgpa and cgpa != "N/A":
+                        return f"{name}'s CGPA is {cgpa}."
+                    gpa = data.get("gpa")
+                    if gpa and gpa != "N/A":
+                        return f"{name}'s GPA is {gpa}."
+                    return f"I don't have GPA information for {name}."
+            
+            # Attendance queries
+            if "attendance" in q_lower:
+                attendance = data.get("attendance_percentage")
+                if attendance and attendance != "N/A":
+                    return f"{name}'s attendance is {attendance}%."
+                return f"I don't have attendance information for {name}."
+            
+            # Credits queries
+            if "credits" in q_lower:
+                credits_earned = data.get("total_credits_earned")
+                credits_remaining = data.get("credits_remaining")
+                if credits_earned and credits_earned != "N/A":
+                    response = f"{name} has earned {credits_earned} credits"
+                    if credits_remaining and credits_remaining != "N/A":
+                        response += f", with {credits_remaining} credits remaining to graduate"
+                    return response + "."
+                return f"I don't have credit information for {name}."
+            
+            # Academic status queries
+            if "academic status" in q_lower or "status" in q_lower:
+                status = data.get("academic_status")
+                if status and status != "N/A":
+                    return f"{name}'s academic status is '{status}'."
+                return f"I don't have academic status information for {name}."
             
             # Roll number queries
             if "roll no" in q_lower or "roll number" in q_lower:
@@ -537,17 +675,17 @@ class CollegeQuerySystem:
                 if gender and gender != "N/A":
                     return f"{name} is {gender.lower()}."
                 return f"I don't have gender information for {name}."
-            
+
         else:  # teacher
             # Email queries
             if "email" in q_lower:
                 email = data.get("email")
                 if email and email != "N/A":
-                    return f"You can email {name} at {email}."
-                return f"Sorry, I don't have an email for {name}."
+                    return f"You can reach {name} at {email}."
+                return f"Sorry, I don't have an email address for {name}."
             
             # Phone queries
-            if "phone" in q_lower or "contact" in q_lower:
+            if "phone" in q_lower or "contact number" in q_lower or "mobile" in q_lower or "contact" in q_lower:
                 phone = data.get("phone")
                 if phone and phone != "N/A":
                     return f"{name}'s phone number is {phone}."
@@ -596,8 +734,21 @@ class CollegeQuerySystem:
                 
                 # Use the current user's data
                 person_data = {"type": "student", "data": user_data}
+
+                # Check if asking about performance
+                performance_keywords = ["performance", "doing", "gpa", "cgpa", "attendance", "grades", "marks"]
+                is_performance_query = any(keyword in q_lower for keyword in performance_keywords)
                 
-                # Transform the question to match what _handle_specific_field_query expects
+                if is_performance_query:
+                    specific_response = self._handle_specific_field_query(question, person_data)
+                    if specific_response:
+                        # Replace name with "You"
+                        user_name = user_data.get('name', '')
+                        response = specific_response.replace(user_name + "'s", "Your")
+                        response = response.replace(user_name, "You")
+                        return response
+                
+                # Transform the question for other queries
                 user_name = user_data.get('name', '')
                 modified_question = question
                 
@@ -618,7 +769,7 @@ class CollegeQuerySystem:
                     return response
                 
                 # If no specific field response, return general info
-                return self._get_person_info(person_data)
+                return self._get_person_info(person_data, include_performance=True)
         
         # Existing logic for other person queries...
         name = self._extract_person_name(question)
@@ -630,12 +781,17 @@ class CollegeQuerySystem:
         person_data = self._search_person(name)
         if not person_data:
             return f"Hmm, I couldn't find anyone named {name.title()} in our database. Could you double-check the spelling?"
-        
+
+        # Check if this is a performance-related query
+        q_lower = question.lower()
+        performance_keywords = ["performance", "doing", "gpa", "cgpa", "attendance", "grades", "marks"]
+        include_performance = any(keyword in q_lower for keyword in performance_keywords)
+
         specific_response = self._handle_specific_field_query(question, person_data)
         if specific_response:
             return specific_response
         
-        return self._get_person_info(person_data)
+        return self._get_person_info(person_data, include_performance=include_performance)
 
     def _handle_teacher_subject_query(self, question):
         """Handle 'who teaches X' queries"""
@@ -890,7 +1046,9 @@ class CollegeQuerySystem:
         person_field_keywords = [
             "email of", "phone of", "contact of", "address of",
             "roll no", "roll number", "symbol", "registration",
-            "dob of", "birthday of", "gender of", "batch of", "section of"
+            "dob of", "birthday of", "gender of", "batch of", "section of", 
+            "who is", "details about", "information about", "tell me about",
+            "performance of", "gpa of", "cgpa of", "attendance of", "grades of", "marks of"
         ]
         
         if any(keyword in q_lower for keyword in person_field_keywords):
@@ -1027,6 +1185,7 @@ def interactive_chat():
     print("  • Programs (BCA, CSIT, BSW, BBS)")
     print("  • Courses, admissions, and career info")
     print("  • Student & teacher details (with proper access)")
+    print("  • Student performance (GPA, attendance, academic status)")
     print("\nType 'exit' to quit")
     print("="*60)
 
