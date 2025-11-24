@@ -687,6 +687,26 @@ class CollegeQuerySystem:
                         user_name = user_data.get('name', '')
                         response = specific_response.replace(user_name + "'s", "Your")
                         response = response.replace(user_name, "You")
+                            # Fix verb conjugations and pronouns
+                        response = response.replace("You is", "You are")
+                        response = response.replace("You has", "You have")
+                        response = response.replace("You was", "You were")
+                        
+                        # Replace third-person pronouns with second-person
+                        response = response.replace(" his ", " your ")
+                        response = response.replace(" her ", " your ")
+                        response = response.replace(" their ", " your ")
+                        response = response.replace(" he ", " you ")
+                        response = response.replace(" she ", " you ")
+                        response = response.replace(" they ", " you ")
+                        response = response.replace("His ", "Your ")
+                        response = response.replace("Her ", "Your ")
+                        response = response.replace("Their ", "Your ")
+                        response = response.replace("He ", "You ")
+                        response = response.replace("She ", "You ")
+                        response = response.replace("They ", "You ")
+                        
+                        
                         return response
                 
                 user_name = user_data.get('name', '')

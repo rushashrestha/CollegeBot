@@ -835,6 +835,7 @@
 }
 
 .app-container.dark .modal-header {
+    background: #1e1e1e !important;
   border-bottom-color: #404040;
 }
 
@@ -843,6 +844,7 @@
   font-size: 20px;
   font-weight: 600;
   color: #111827;
+  background-color: transparent;
 }
 
 .app-container.dark .modal-header h3 {
