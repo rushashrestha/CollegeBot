@@ -270,20 +270,7 @@ if __name__ == "__main__":
     db = create_vector_store(texts)
     analyze_database_content(db)
     
-    # ✅ STEP 4: Optional cleanup
-    print("\n" + "="*60)
-    print("STEP 4: Cleanup")
-    print("="*60)
-    try:
-        cleanup = input("Delete temporary data/ folder? (y/n): ").lower()
-        if cleanup == 'y':
-            import shutil
-            shutil.rmtree("data")
-            print("🧹 Cleaned up temporary files")
-        else:
-            print("📁 Kept data/ folder for reference")
-    except:
-        print("📁 Kept data/ folder")
+
     
     print("\n" + "="*60)
     print("✅ DATABASE CREATION COMPLETED!")

@@ -507,7 +507,7 @@ class CollegeQuerySystem:
                     return f"You can reach {name} at {email}."
                 return f"Sorry, I don't have an email address for {name}."
             
-            if "phone" in q_lower or "contact number" in q_lower or "mobile" in q_lower or "number" in q_lower:
+            if "phone" in q_lower or "contact number" in q_lower or "mobile" in q_lower or "contact number" in q_lower:
                 phone = data.get("phone")
                 if phone and phone != "N/A":
                     return f"{name}'s phone number is {phone}."
