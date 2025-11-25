@@ -1033,9 +1033,40 @@ class CollegeQuerySystem:
         if self._is_institutional_query(question):
             return "document"
         
+        program_question_patterns = [
+            "tell me about", "what is", "about the", "information about",
+            "details about", "describe", "explain"
+        ]
+
+        program_mentioned = any(
+        any(keyword in q_lower for keyword in program_data["keywords"])
+        for program_data in self.programs.values()
+    )
+    
+        if program_mentioned and any(pattern in q_lower for pattern in program_question_patterns):
+        # Make sure it's not asking about a specific person's program
+            person_indicators = ["email", "phone", "roll", "performance", "gpa", "attendance"]
+            if not any(indicator in q_lower for indicator in person_indicators):
+                return "program_info"
+
+          # Program-specific queries
+        program_queries = [
+            "how many semesters", "duration", "course", "curriculum",
+            "syllabus", "seats", "admission", "eligibility"
+        ]
+        if any(phrase in q_lower for phrase in program_queries):
+            return "program_info"
+        
         # Check for personal pronouns (for logged-in users)
         personal_pronouns = [" my ", " me ", " mine ", " i ", " myself "]
-        if any(pronoun in q_lower for pronoun in personal_pronouns):
+        personal_data_keywords = ["email", "phone", "address", "roll", "gpa", "cgpa", 
+                              "attendance", "performance", "batch", "section", 
+                              "semester", "program", "name"]
+    
+        has_personal_pronoun = any(pronoun in q_lower for pronoun in personal_pronouns)
+        has_personal_data_keyword = any(keyword in q_lower for keyword in personal_data_keywords)
+    
+        if has_personal_pronoun and has_personal_data_keyword:
             return "person"
         
         # Check for "who teaches X" - NOT "who is X"
@@ -1069,13 +1100,7 @@ class CollegeQuerySystem:
         if any(phrase in q_lower for phrase in count_queries):
             return "student_count"
         
-        # Program-specific queries
-        program_queries = [
-            "how many semesters", "duration", "course", "curriculum",
-            "syllabus", "seats", "admission", "eligibility"
-        ]
-        if any(phrase in q_lower for phrase in program_queries):
-            return "program_info"
+      
         
         # Default to document query
         return "document"
