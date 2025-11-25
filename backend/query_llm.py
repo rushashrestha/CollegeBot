@@ -14,7 +14,7 @@ from langchain_core.output_parsers import StrOutputParser
 from supabase import create_client, Client
 
 load_dotenv()
-
+ 
 # ---------------- Supabase config ----------------
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("VITE_SUPABASE_ANON_KEY")
@@ -93,32 +93,32 @@ class CollegeQuerySystem:
             "registrar", "controller", "chief", "president", "secretary"
         ]
 
-    def _load_documents_from_storage(self):
-        """Load all MD documents from Supabase Storage"""
-        try:
-            print("📄 Loading documents from Supabase Storage...")
-            files = self.supabase.storage.from_(self.storage_bucket).list()
+    # def _load_documents_from_storage(self):
+    #     """Load all MD documents from Supabase Storage"""
+    #     try:
+    #         print("📄 Loading documents from Supabase Storage...")
+    #         files = self.supabase.storage.from_(self.storage_bucket).list()
             
-            documents = []
-            for file_obj in files:
-                if file_obj['name'].endswith('.md'):
-                    try:
-                        file_data = self.supabase.storage.from_(self.storage_bucket).download(file_obj['name'])
-                        content = file_data.decode('utf-8')
-                        documents.append({
-                            'filename': file_obj['name'],
-                            'content': content
-                        })
-                        print(f"✅ Loaded: {file_obj['name']}")
-                    except Exception as e:
-                        print(f"❌ Error loading {file_obj['name']}: {e}")
+    #         documents = []
+    #         for file_obj in files:
+    #             if file_obj['name'].endswith('.md'):
+    #                 try:
+    #                     file_data = self.supabase.storage.from_(self.storage_bucket).download(file_obj['name'])
+    #                     content = file_data.decode('utf-8')
+    #                     documents.append({
+    #                         'filename': file_obj['name'],
+    #                         'content': content
+    #                     })
+    #                     print(f"✅ Loaded: {file_obj['name']}")
+    #                 except Exception as e:
+    #                     print(f"❌ Error loading {file_obj['name']}: {e}")
             
-            print(f"📚 Total documents loaded: {len(documents)}")
-            return documents
+    #         print(f"📚 Total documents loaded: {len(documents)}")
+    #         return documents
             
-        except Exception as e:
-            print(f"❌ Error loading documents from storage: {e}")
-            return []
+    #     except Exception as e:
+    #         print(f"❌ Error loading documents from storage: {e}")
+    #         return []
 
     def _is_institutional_query(self, question):
         """Check if query is about institutional roles (from documents, not database)"""
