@@ -114,7 +114,7 @@ const Login = () => {
     try {
       sessionStorage.removeItem("authBuffer");
 
-      if (email === import.meta.env.ADMIN_EMAIL && password === import.meta.env.ADMIN_PASSWORD) {
+      if (email === import.meta.env.VITE_ADMIN_EMAIL && password === import.meta.env.VITE_ADMIN_PASSWORD) {
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('guest_messages_') || key.startsWith('guest-')) {
             localStorage.removeItem(key);

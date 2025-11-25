@@ -14,7 +14,7 @@ from langchain_core.output_parsers import StrOutputParser
 from supabase import create_client, Client
 
 load_dotenv()
-
+ 
 # ---------------- Supabase config ----------------
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("VITE_SUPABASE_ANON_KEY")
@@ -93,32 +93,32 @@ class CollegeQuerySystem:
             "registrar", "controller", "chief", "president", "secretary"
         ]
 
-    def _load_documents_from_storage(self):
-        """Load all MD documents from Supabase Storage"""
-        try:
-            print("📄 Loading documents from Supabase Storage...")
-            files = self.supabase.storage.from_(self.storage_bucket).list()
+    # def _load_documents_from_storage(self):
+    #     """Load all MD documents from Supabase Storage"""
+    #     try:
+    #         print("📄 Loading documents from Supabase Storage...")
+    #         files = self.supabase.storage.from_(self.storage_bucket).list()
             
-            documents = []
-            for file_obj in files:
-                if file_obj['name'].endswith('.md'):
-                    try:
-                        file_data = self.supabase.storage.from_(self.storage_bucket).download(file_obj['name'])
-                        content = file_data.decode('utf-8')
-                        documents.append({
-                            'filename': file_obj['name'],
-                            'content': content
-                        })
-                        print(f"✅ Loaded: {file_obj['name']}")
-                    except Exception as e:
-                        print(f"❌ Error loading {file_obj['name']}: {e}")
+    #         documents = []
+    #         for file_obj in files:
+    #             if file_obj['name'].endswith('.md'):
+    #                 try:
+    #                     file_data = self.supabase.storage.from_(self.storage_bucket).download(file_obj['name'])
+    #                     content = file_data.decode('utf-8')
+    #                     documents.append({
+    #                         'filename': file_obj['name'],
+    #                         'content': content
+    #                     })
+    #                     print(f"✅ Loaded: {file_obj['name']}")
+    #                 except Exception as e:
+    #                     print(f"❌ Error loading {file_obj['name']}: {e}")
             
-            print(f"📚 Total documents loaded: {len(documents)}")
-            return documents
+    #         print(f"📚 Total documents loaded: {len(documents)}")
+    #         return documents
             
-        except Exception as e:
-            print(f"❌ Error loading documents from storage: {e}")
-            return []
+    #     except Exception as e:
+    #         print(f"❌ Error loading documents from storage: {e}")
+    #         return []
 
     def _is_institutional_query(self, question):
         """Check if query is about institutional roles (from documents, not database)"""
@@ -1033,9 +1033,40 @@ class CollegeQuerySystem:
         if self._is_institutional_query(question):
             return "document"
         
+        program_question_patterns = [
+            "tell me about", "what is", "about the", "information about",
+            "details about", "describe", "explain"
+        ]
+
+        program_mentioned = any(
+        any(keyword in q_lower for keyword in program_data["keywords"])
+        for program_data in self.programs.values()
+    )
+    
+        if program_mentioned and any(pattern in q_lower for pattern in program_question_patterns):
+        # Make sure it's not asking about a specific person's program
+            person_indicators = ["email", "phone", "roll", "performance", "gpa", "attendance"]
+            if not any(indicator in q_lower for indicator in person_indicators):
+                return "program_info"
+
+          # Program-specific queries
+        program_queries = [
+            "how many semesters", "duration", "course", "curriculum",
+            "syllabus", "seats", "admission", "eligibility"
+        ]
+        if any(phrase in q_lower for phrase in program_queries):
+            return "program_info"
+        
         # Check for personal pronouns (for logged-in users)
         personal_pronouns = [" my ", " me ", " mine ", " i ", " myself "]
-        if any(pronoun in q_lower for pronoun in personal_pronouns):
+        personal_data_keywords = ["email", "phone", "address", "roll", "gpa", "cgpa", 
+                              "attendance", "performance", "batch", "section", 
+                              "semester", "program", "name"]
+    
+        has_personal_pronoun = any(pronoun in q_lower for pronoun in personal_pronouns)
+        has_personal_data_keyword = any(keyword in q_lower for keyword in personal_data_keywords)
+    
+        if has_personal_pronoun and has_personal_data_keyword:
             return "person"
         
         # Check for "who teaches X" - NOT "who is X"
@@ -1069,13 +1100,7 @@ class CollegeQuerySystem:
         if any(phrase in q_lower for phrase in count_queries):
             return "student_count"
         
-        # Program-specific queries
-        program_queries = [
-            "how many semesters", "duration", "course", "curriculum",
-            "syllabus", "seats", "admission", "eligibility"
-        ]
-        if any(phrase in q_lower for phrase in program_queries):
-            return "program_info"
+      
         
         # Default to document query
         return "document"
