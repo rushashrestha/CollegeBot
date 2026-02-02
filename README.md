@@ -1,10 +1,10 @@
-# 🎓 CollegeBot - AI-Powered College Information Chatbot
+# 🎓 AskSamriddhi - AI-Powered College Information Chatbot
 
 A full-stack AI chatbot application that provides intelligent responses to queries about Samriddhi College programs, admissions, courses, and student information using LLMs and vector databases.
 
 ## Overview
 
-CollegeBot is a comprehensive solution combining:
+AskSamriddhi is a comprehensive solution combining:
 - **Backend**: FastAPI server with LLM integration (Groq, OpenAI)
 - **Frontend**: React application with modern UI components
 - **Database**: ChromaDB for vector embeddings and Supabase for user data
@@ -21,7 +21,7 @@ CollegeBot is a comprehensive solution combining:
 ## Project Structure
 
 ```
-CollegeBot/
+AskSameiddhi/
 ├── backend/                    # Python FastAPI server
 │   ├── main.py                # FastAPI app entry point
 │   ├── server.py              # Additional server utilities
